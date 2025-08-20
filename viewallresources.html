@@ -66,8 +66,8 @@
         .transition-all-fast { transition: all 0.2s ease-in-out; }
         #filter-panel { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
         #filter-panel.open { transform: translateX(0); }
-        #filter-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
-        #filter-overlay.open { opacity: 1; pointer-events: auto; }
+        #filter-overlay, #sidebar-overlay, .modal-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+        #filter-overlay.open, #sidebar-overlay.open, .modal-overlay.open { opacity: 1; pointer-events: auto; }
 
         /* --- BRANDED Sidebar Enhancements --- */
         .sidebar { background-color: #0F0F0F; }
@@ -108,13 +108,19 @@
     <div class="aurora-background"></div>
 
     <div class="flex h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 md:hidden"></div>
+
         <!-- Sidebar Navigation -->
-        <nav class="w-64 sidebar text-gray-300 flex-shrink-0 hidden md:flex flex-col">
-            <div class="h-24 flex items-center px-6">
-                <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
-                    <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
-                </svg>
-                <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-40 -translate-x-full md:relative md:translate-x-0">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+                <button id="close-sidebar-btn" class="p-2 md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <div class="flex-grow overflow-y-auto sidebar-scroll">
                 <ul class="px-4 py-4 space-y-1">
@@ -155,32 +161,35 @@
         <!-- Main Content Wrapper -->
         <div class="flex-1 flex flex-col">
             <!-- Header -->
-            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-8 z-10">
-                <div>
-                    <h2 class="text-2xl font-bold text-brand-black">All Resources Details</h2>
-                    <nav aria-label="Breadcrumb" class="text-sm text-gray-500 mt-1">
-                        <ol class="list-none p-0 inline-flex">
-                          <li class="flex items-center"><a href="#" class="hover:text-brand-red">Home</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
-                          <li class="flex items-center"><a href="#" class="hover:text-brand-red">Resource Management</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
-                          <li aria-current="page"><a href="#" class="text-brand-black font-medium">All Resources Details</a></li>
-                        </ol>
-                      </nav>
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10">
+                <div class="flex items-center">
+                    <button id="menu-btn" class="p-2 md:hidden mr-3"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-brand-black">All Resources Details</h2>
+                        <nav aria-label="Breadcrumb" class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
+                            <ol class="list-none p-0 inline-flex">
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Home</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Resource Management</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li aria-current="page"><a href="#" class="text-brand-black font-medium">All Resources Details</a></li>
+                            </ol>
+                          </nav>
+                    </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="relative"><i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i><input type="text" id="searchInput" placeholder="Search by name, ID, or skill..." class="w-64 bg-white/50 border border-transparent text-brand-black rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red transition-all-fast"></div>
-                    <button id="filter-toggle-btn" class="flex items-center justify-center h-11 px-5 bg-white/60 border border-gray-300/50 text-brand-black rounded-lg hover:bg-white/80 transition-all-fast"><i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2"></i>Filters</button>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="relative hidden sm:block"><i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i><input type="text" id="searchInput" placeholder="Search..." class="w-40 lg:w-64 bg-white/50 border border-transparent text-brand-black rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red transition-all-fast"></div>
+                    <button id="filter-toggle-btn" class="flex items-center justify-center h-11 px-3 sm:px-5 bg-white/60 border border-gray-300/50 text-brand-black rounded-lg hover:bg-white/80 transition-all-fast"><i data-lucide="sliders-horizontal" class="w-5 h-5 sm:mr-2"></i><span class="hidden sm:inline">Filters</span></button>
                 </div>
             </header>
 
             <!-- Main Content Area -->
-            <main class="flex-1 overflow-y-auto p-8">
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
                 <!-- Redesigned Insights Section -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-                    <div class="card p-5"><div class="flex items-center"><i data-lucide="users" class="w-6 h-6 text-gray-400"></i><h3 class="font-semibold text-gray-600 ml-3">Total Resources</h3></div><p id="total-resources" class="text-4xl font-extrabold text-brand-black mt-3">0</p></div>
-                    <div class="card p-5"><div class="flex items-center"><i data-lucide="check-circle-2" class="w-6 h-6 text-green-500"></i><h3 class="font-semibold text-gray-600 ml-3">Fully Utilized</h3></div><p id="utilized-resources" class="text-4xl font-extrabold text-green-600 mt-3">0</p></div>
-                    <div class="card p-5"><div class="flex items-center"><i data-lucide="pie-chart" class="w-6 h-6 text-yellow-500"></i><h3 class="font-semibold text-gray-600 ml-3">Partially Utilized</h3></div><p id="partial-resources" class="text-4xl font-extrabold text-yellow-600 mt-3">0</p></div>
-                    <div class="card p-5"><div class="flex items-center"><i data-lucide="user-check" class="w-6 h-6 text-blue-500"></i><h3 class="font-semibold text-gray-600 ml-3">Available</h3></div><p id="available-resources" class="text-4xl font-extrabold text-blue-600 mt-3">0</p></div>
-                    <div class="card p-5"><div class="flex items-center"><i data-lucide="clock" class="w-6 h-6 text-gray-400"></i><h3 class="font-semibold text-gray-600 ml-3">Avg. Bench Age</h3></div><p id="avg-bench-age" class="text-4xl font-extrabold text-brand-black mt-3">0 <span class="text-2xl font-medium text-gray-500">days</span></p></div>
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+                    <div class="card p-4 sm:p-5 col-span-2 sm:col-span-1"><div class="flex items-center"><i data-lucide="users" class="w-6 h-6 text-gray-400"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Total</h3></div><p id="total-resources" class="text-3xl sm:text-4xl font-extrabold text-brand-black mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="check-circle-2" class="w-6 h-6 text-green-500"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Utilized</h3></div><p id="utilized-resources" class="text-3xl sm:text-4xl font-extrabold text-green-600 mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="pie-chart" class="w-6 h-6 text-yellow-500"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Partial</h3></div><p id="partial-resources" class="text-3xl sm:text-4xl font-extrabold text-yellow-600 mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="user-check" class="w-6 h-6 text-blue-500"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Available</h3></div><p id="available-resources" class="text-3xl sm:text-4xl font-extrabold text-blue-600 mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="clock" class="w-6 h-6 text-gray-400"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Bench Age</h3></div><p id="avg-bench-age" class="text-3xl sm:text-4xl font-extrabold text-brand-black mt-3">0 <span class="text-xl sm:text-2xl font-medium text-gray-500">days</span></p></div>
                 </div>
                 
                 <div id="active-filters-container" class="mb-6"></div>
@@ -208,7 +217,7 @@
                             <tbody id="resource-list" class="divide-y divide-gray-200"></tbody>
                         </table>
                     </div>
-                     <div class="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                     <div class="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
                         <div class="flex items-center space-x-2">
                             <label for="rows-per-page" class="text-sm text-gray-600">Rows per page:</label>
                             <select id="rows-per-page" class="rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
@@ -232,7 +241,7 @@
 
     <!-- Filter Panel -->
     <div id="filter-overlay" class="fixed inset-0 z-30"></div>
-    <aside id="filter-panel" class="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-40 p-8 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="filter-heading">
+    <aside id="filter-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-40 p-8 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="filter-heading">
         <div class="flex items-center justify-between">
             <h2 id="filter-heading" class="text-xl font-bold">Filter Resources</h2>
             <button id="close-filter-btn" class="p-1 rounded-full hover:bg-gray-100" aria-label="Close filter panel"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
@@ -288,6 +297,28 @@
         </div>
     </aside>
 
+    <!-- Soft Book Modal -->
+    <div id="soft-book-modal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
+            <h3 class="text-lg font-bold">Soft Book Resource</h3>
+            <p id="soft-book-resource-name" class="mt-1 text-gray-600"></p>
+            <div id="soft-book-warning" class="hidden mt-4 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm"></div>
+            <div class="mt-6">
+                <label for="role-select" class="text-sm font-semibold text-gray-600">Select a Role to Book</label>
+                <select id="role-select" class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"></select>
+            </div>
+            <div class="mt-8 flex justify-end space-x-4">
+                <button id="cancel-soft-book-btn" class="h-11 px-5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200">Cancel</button>
+                <button id="confirm-soft-book-btn" class="h-11 px-5 bg-brand-red text-white rounded-lg font-semibold hover:bg-red-700">Confirm Booking</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="fixed top-8 right-8 bg-brand-black text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-[200%] transition-transform duration-300 ease-in-out z-50">
+        <p id="notification-message"></p>
+    </div>
+
     <script>
         // --- DATA GENERATION ---
         const generateResources = (count) => {
@@ -326,13 +357,15 @@
                     benchAging: benchAging,
                     availabilityDate: availabilityDate,
                     locked: Math.random() > 0.8,
-                    avatar: firstName.charAt(0)
+                    avatar: firstName.charAt(0),
+                    softBookedRoles: Math.random() > 0.9 ? ['Project Phoenix'] : []
                 });
             }
             return generated;
         };
 
         const resources = generateResources(6800);
+        const availableRoles = ['Project Phoenix', 'Project Titan', 'Project Nebula', 'Project Olympus'];
 
         // --- STATE MANAGEMENT ---
         let currentPage = 1;
@@ -341,6 +374,7 @@
         let currentSort = { key: 'name', direction: 'asc' };
         let savedFilters = [];
         let statusChartInstance = null;
+        let resourceToBookId = null;
 
         // --- DOM ELEMENTS ---
         const resourceList = document.getElementById('resource-list');
@@ -362,9 +396,21 @@
         const pageNumber = document.getElementById('page-number');
         const rowsPerPageSelect = document.getElementById('rows-per-page');
         const activeFiltersContainer = document.getElementById('active-filters-container');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const softBookModal = document.getElementById('soft-book-modal');
+        const softBookResourceName = document.getElementById('soft-book-resource-name');
+        const softBookWarning = document.getElementById('soft-book-warning');
+        const roleSelect = document.getElementById('role-select');
+        const cancelSoftBookBtn = document.getElementById('cancel-soft-book-btn');
+        const confirmSoftBookBtn = document.getElementById('confirm-soft-book-btn');
+        const notificationToast = document.getElementById('notification-toast');
+        const notificationMessage = document.getElementById('notification-message');
 
         // --- RENDER FUNCTIONS ---
-        const getStatusPill = (status, percent) => {
+        const getStatusPill = (status, percent, isSoftBooked) => {
             let styles = '', text = status;
             switch (status) {
                 case 'Fully Utilized': styles = 'bg-green-100/80 text-green-800'; break;
@@ -372,7 +418,8 @@
                 case 'Available': styles = 'bg-blue-100/80 text-blue-800'; break;
                 default: styles = 'bg-gray-100/80 text-gray-800';
             }
-            return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${styles}">${text}</span>`;
+            const softBookedIcon = isSoftBooked ? '<i data-lucide="book-marked" class="w-3.5 h-3.5 ml-1.5 text-gray-500"></i>' : '';
+            return `<span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${styles}">${text}${softBookedIcon}</span>`;
         };
 
         const getSkillTag = (level) => {
@@ -398,12 +445,20 @@
 
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><img class="h-11 w-11 rounded-full" src="https://placehold.co/44x44/0F0F0F/FFFFFF?text=${resource.avatar}" alt="${resource.name}"><div class="ml-4"><div class="text-sm font-semibold text-brand-black flex items-center">${resource.name} ${resource.locked ? '<i data-lucide="lock" class="w-3.5 h-3.5 ml-2 text-gray-400"></i>' : ''}</div><div class="text-sm text-gray-500">ID: ${resource.id}</div></div></div></td>
-                    <td class="px-6 py-4 whitespace-nowrap">${getStatusPill(resource.status, resource.utilizationPercent)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${getStatusPill(resource.status, resource.utilizationPercent, resource.softBookedRoles.length > 0)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${resource.benchAging !== null ? `${resource.benchAging} days` : '<span class="text-gray-400">-</span>'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${resource.availabilityDate || '<span class="text-green-600 font-medium">Immediate</span>'}</td>
                     <td class="px-6 py-4"><div class="flex flex-wrap">${skillsHtml}</div></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${resource.location}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button type="button" class="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600"><i data-lucide="more-vertical" class="w-5 h-5"></i></button></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button type="button" class="actions-toggle p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600" data-resource-id="${resource.id}"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                        <div id="actions-menu-${resource.id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
+                            <div class="py-1">
+                                <a href="#" class="soft-book-btn flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-resource-id="${resource.id}"><i data-lucide="book-marked" class="w-4 h-4 mr-3"></i>Soft Book</a>
+                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="user" class="w-4 h-4 mr-3"></i>View Profile</a>
+                            </div>
+                        </div>
+                    </td>
                 `;
                 resourceList.appendChild(row);
             });
@@ -603,7 +658,7 @@
             applyAllLogic();
         });
 
-        // --- NEW EVENT LISTENERS for filter controls ---
+        // --- FILTER CONTROLS LOGIC ---
         filterPanel.addEventListener('click', (e) => {
             const target = e.target.closest('button[data-action]');
             if (!target) return;
@@ -638,6 +693,80 @@
             applyAllLogic();
         });
 
+        // --- SOFT BOOK MODAL & ACTIONS LOGIC ---
+        const showNotification = (message) => {
+            notificationMessage.textContent = message;
+            notificationToast.classList.remove('translate-x-[200%]');
+            setTimeout(() => {
+                notificationToast.classList.add('translate-x-[200%]');
+            }, 3000);
+        };
+
+        const openSoftBookModal = (resource) => {
+            resourceToBookId = resource.id;
+            softBookResourceName.textContent = `Resource: ${resource.name}`;
+            
+            if (resource.softBookedRoles.length > 0) {
+                softBookWarning.textContent = `Warning: This resource is already soft booked to ${resource.softBookedRoles.join(', ')}.`;
+                softBookWarning.classList.remove('hidden');
+            } else {
+                softBookWarning.classList.add('hidden');
+            }
+
+            roleSelect.innerHTML = availableRoles.map(role => `<option value="${role}">${role}</option>`).join('');
+            softBookModal.classList.remove('hidden');
+            softBookModal.classList.add('flex');
+        };
+
+        const closeSoftBookModal = () => {
+            softBookModal.classList.add('hidden');
+            softBookModal.classList.remove('flex');
+            resourceToBookId = null;
+        };
+
+        confirmSoftBookBtn.addEventListener('click', () => {
+            if (resourceToBookId) {
+                const resource = resources.find(r => r.id === resourceToBookId);
+                const selectedRole = roleSelect.value;
+                if (resource && !resource.softBookedRoles.includes(selectedRole)) {
+                    resource.softBookedRoles.push(selectedRole);
+                }
+                showNotification(`${resource.name} has been soft booked to ${selectedRole}.`);
+                applyAllLogic();
+                closeSoftBookModal();
+            }
+        });
+
+        cancelSoftBookBtn.addEventListener('click', closeSoftBookModal);
+
+        // --- EVENT DELEGATION for dynamic elements ---
+        document.body.addEventListener('click', (e) => {
+            // Actions menu toggle
+            const actionsToggle = e.target.closest('.actions-toggle');
+            document.querySelectorAll('[id^="actions-menu-"]').forEach(menu => {
+                if (!actionsToggle || menu.id !== `actions-menu-${actionsToggle.dataset.resourceId}`) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            if (actionsToggle) {
+                const resourceId = parseInt(actionsToggle.dataset.resourceId, 10);
+                const menu = document.getElementById(`actions-menu-${resourceId}`);
+                menu.classList.toggle('hidden');
+            }
+
+            // Soft book button click
+            const softBookBtn = e.target.closest('.soft-book-btn');
+            if (softBookBtn) {
+                e.preventDefault();
+                const resourceId = parseInt(softBookBtn.dataset.resourceId, 10);
+                const resource = resources.find(r => r.id === resourceId);
+                if (resource) {
+                    openSoftBookModal(resource);
+                }
+            }
+        });
+
 
         // --- INITIALIZATION & EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -648,6 +777,16 @@
             lucide.createIcons();
             
             searchInput.addEventListener('input', () => { currentPage = 1; applyAllLogic(); });
+            
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('open');
+            };
+
+            menuBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+
             filterToggleBtn.addEventListener('click', toggleFilterPanel);
             closeFilterBtn.addEventListener('click', toggleFilterPanel);
             filterOverlay.addEventListener('click', toggleFilterPanel);
