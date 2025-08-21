@@ -217,6 +217,10 @@
                                 </div>
                             </div>
                             <div id="skills-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                            <div id="skill-gaps-container" class="mt-4 hidden">
+                                <h5 class="font-bold text-md mb-2">Skill Gaps for this Role</h5>
+                                <div id="skill-gaps-list" class="flex flex-wrap gap-2"></div>
+                            </div>
                         </div>
                         <div class="card p-6 fade-in-card" style="animation-delay: 400ms;">
                              <h4 class="font-bold text-lg mb-4">Experience History</h4>
@@ -330,6 +334,8 @@
             const actionsMenuButton = document.getElementById('actions-menu-button');
             const actionsDropdown = document.getElementById('actions-dropdown');
             const skillCompareRoleSelect = document.getElementById('skill-compare-role');
+            const skillGapsContainer = document.getElementById('skill-gaps-container');
+            const skillGapsList = document.getElementById('skill-gaps-list');
 
             const renderActions = () => {
                 const actions = [
@@ -385,8 +391,11 @@
             
             const renderSkills = (skills, compareRole = null) => {
                 let requiredSkills = [];
+                let missingSkills = [];
                 if (compareRole && requiredSkillsForRoles[compareRole]) {
                     requiredSkills = requiredSkillsForRoles[compareRole];
+                    const userSkillNames = skills.map(s => s.skill);
+                    missingSkills = requiredSkills.filter(req => !userSkillNames.includes(req.skill));
                 }
 
                 skillsList.innerHTML = skills.map(skill => {
@@ -396,12 +405,20 @@
                         const required = requiredSkills.find(r => r.skill === skill.skill);
                         if (required) {
                             comparisonClass = 'ring-2 ring-green-500';
-                        } else {
-                            comparisonClass = 'opacity-50';
                         }
                     }
                     return `<div class="p-4 rounded-lg bg-gray-50 flex-grow ${comparisonClass} transition-all-fast"><p class="font-bold">${skill.skill}</p><p class="text-sm ${tag.color} inline-flex items-center px-2 py-0.5 rounded-full mt-1"><i data-lucide="${tag.icon}" class="w-3 h-3 mr-1.5"></i>${skill.level}</p><p class="text-xs text-gray-400 mt-2">Verified: ${skill.date}</p></div>`
                 }).join('');
+                
+                if (missingSkills.length > 0) {
+                    skillGapsContainer.classList.remove('hidden');
+                    skillGapsList.innerHTML = missingSkills.map(skill => 
+                        `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">${skill.skill}</span>`
+                    ).join('');
+                } else {
+                    skillGapsContainer.classList.add('hidden');
+                }
+
                 lucide.createIcons();
             };
 
