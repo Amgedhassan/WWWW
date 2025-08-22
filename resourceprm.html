@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resource Profile</title>
+    <title>Resource Profile - Project Manager View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
@@ -90,19 +90,6 @@
              background-position: 0 0, 10px 10px;
              opacity: 0.05;
         }
-        
-        /* --- Toggle Switch --- */
-        .toggle-bg:after {
-            content: '';
-            @apply absolute top-0.5 left-0.5 bg-white border border-gray-300 rounded-full h-5 w-5 transition shadow-sm;
-        }
-        input:checked + .toggle-bg:after {
-            transform: translateX(100%);
-            @apply border-white;
-        }
-        input:checked + .toggle-bg {
-            @apply bg-brand-red;
-        }
     </style>
 </head>
 <body class="text-brand-black">
@@ -148,10 +135,10 @@
             </div>
             <div class="p-4 border-t border-gray-700">
                  <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
-                    <div class="w-10 h-10 rounded-full bg-brand-red text-white flex items-center justify-center font-bold">RM</div>
+                    <div class="w-10 h-10 rounded-full bg-brand-red text-white flex items-center justify-center font-bold">PM</div>
                     <div class="ml-3">
-                        <p class="font-semibold text-white">Resource Manager</p>
-                        <p class="text-xs text-gray-500">rm@workforce.io</p>
+                        <p class="font-semibold text-white">Project Manager</p>
+                        <p class="text-xs text-gray-500">pm@workforce.io</p>
                     </div>
                  </a>
             </div>
@@ -284,20 +271,20 @@
                 { skill: 'User Research', level: 'Advanced', date: '2022-11-01' },
                 { skill: 'Design Systems', level: 'Expert', date: '2024-01-05' }
             ],
-            status: 'Fully Utilized',
-            utilizationPercent: 100,
+            status: 'Partially Utilized',
+            utilizationPercent: 90,
             benchAging: null,
             avatar: 'JD',
             lookingForNewRole: true,
-            locked: true,
+            locked: false,
             experience: [
                 { role: 'Senior UI/UX Designer', project: 'Project Titan', duration: '2022 - 2024' },
                 { role: 'UI/UX Designer', project: 'Project Apollo', duration: '2020 - 2022' },
                 { role: 'Junior Designer', project: 'Internal Tools', duration: '2019 - 2020' }
             ],
             relatedRoles: [
-                { type: 'Hard Booked', roleId: 'UX-001', projectId: 'PRJ-1124556', bcId: 'BC-123', allocation: 100, endDate: '2024-12-31' },
-                { type: 'Soft Booked', roleId: 'UX-002', projectId: 'PRJ-9622400', bcId: 'BC-456', allocation: 0, endDate: '2025-10-20' },
+                { type: 'Hard Booked', roleId: 'UX-001', projectId: 'PRJ-1124556', bcId: 'BC-123', allocation: 60, endDate: '2024-12-31' },
+                { type: 'Soft Booked', roleId: 'UX-002', projectId: 'PRJ-9622400', bcId: 'BC-456', allocation: 30, endDate: '2025-10-20' }
             ]
         };
         
@@ -356,18 +343,14 @@
             const skillGapsList = document.getElementById('skill-gaps-list');
             const lookingForRoleTag = document.getElementById('looking-for-role-tag');
 
-            const renderActions = (resource) => {
+            const renderActions = () => {
                 const actions = [
-                    { label: 'Edit Profile', icon: 'edit' },
                     { label: 'Export Profile', icon: 'download' },
-                    { label: 'Soft Book Resource', icon: 'book-marked' },
-                    { label: resource.lookingForNewRole ? 'Un-flag for new role' : 'Flag for new role', icon: 'flag', id: 'toggle-looking-for-role' },
-                    { label: resource.locked ? 'Unlock Resource' : 'Lock Resource', icon: resource.locked ? 'unlock' : 'lock', id: 'toggle-lock-btn' },
-                    { label: 'Move to Bench', icon: 'user-minus' }
+                    { label: 'Soft Book Resource', icon: 'book-marked' }
                 ];
                 const actionsList = document.getElementById('actions-list');
                 actionsList.innerHTML = actions.map(action => 
-                    `<a href="#" id="${action.id || ''}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="${action.icon}" class="w-4 h-4 mr-3"></i>${action.label}</a>`
+                    `<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="${action.icon}" class="w-4 h-4 mr-3"></i>${action.label}</a>`
                 ).join('');
                 lucide.createIcons();
             };
@@ -505,7 +488,7 @@
                 }).join('');
 
                 renderCapacity(data.relatedRoles);
-                renderActions(data);
+                renderActions();
                 lucide.createIcons();
             };
 
@@ -544,18 +527,6 @@
             window.addEventListener('click', (e) => {
                 if (!actionsMenuButton.contains(e.target) && !actionsDropdown.contains(e.target)) {
                     actionsDropdown.classList.add('hidden');
-                }
-
-                const toggleFlagBtn = e.target.closest('#toggle-looking-for-role');
-                if (toggleFlagBtn) {
-                    resourceProfile.lookingForNewRole = !resourceProfile.lookingForNewRole;
-                    populateProfile(resourceProfile);
-                }
-
-                const toggleLockBtn = e.target.closest('#toggle-lock-btn');
-                if (toggleLockBtn) {
-                    resourceProfile.locked = !resourceProfile.locked;
-                    populateProfile(resourceProfile);
                 }
             });
 
