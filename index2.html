@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFM Home/Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F0F2F5;
+            color: #0F0F0F;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* --- Aurora Background --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5; z-index: -1;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; filter: blur(100px); opacity: 0.3;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff8a00, transparent 60%);
+            width: 400px; height: 400px; top: -100px; left: -150px;
+            animation: move-aurora-1 15s infinite alternate;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #e60000, transparent 60%);
+            width: 500px; height: 500px; bottom: -150px; right: -200px;
+            animation: move-aurora-2 12s infinite alternate;
+        }
+        @keyframes move-aurora-1 { to { transform: translate(100px, 50px); } }
+        @keyframes move-aurora-2 { to { transform: translate(-80px, -40px); } }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+        }
+        
+        /* --- Animations & Transitions --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-card { opacity: 0; animation: fadeIn 0.5s ease-out forwards; }
+        .transition-all-fast { transition: all 0.2s ease-in-out; }
+        #sidebar-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+        #sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* --- BRANDED Sidebar Enhancements --- */
+        .sidebar { background-color: #0F0F0F; }
+        .sidebar-item { position: relative; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .parent-active > button { color: #FFFFFF; }
+        .parent-active { position: relative; }
+        .parent-active::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: #e60000; border-top-right-radius: 4px; border-bottom-right-radius: 4px;
+        }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .sidebar-submenu-container { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-in-out; }
+        .sidebar-submenu-container.open { grid-template-rows: 1fr; }
+        .sidebar-submenu { overflow: hidden; }
+        
+        /* --- Custom Scrollbar --- */
+        main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        main::-webkit-scrollbar-thumb:hover, .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #374151; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+        /* --- Brand Color Utilities --- */
+        .text-brand-red { color: #e60000; }
+        .bg-brand-red { background-color: #e60000; }
+        .ring-brand-red { --tw-ring-color: #e60000; }
+        .text-brand-black { color: #0F0F0F; }
+    </style>
+</head>
+<body class="text-brand-black">
+    <div class="aurora-background"></div>
+
+    <div class="flex h-screen">
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 md:hidden"></div>
+
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-40 -translate-x-full md:relative md:translate-x-0">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+                <button id="close-sidebar-btn" class="p-2 md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-grow overflow-y-auto sidebar-scroll">
+                <ul class="px-4 py-4 space-y-1">
+                    <li class="sidebar-item"><a href="#" class="nav-link sub-active flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Home/Dashboard</a></li>
+                    <li id="resource-management-menu" class="sidebar-item rounded-lg">
+                        <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all-fast">
+                            <span class="flex items-center"><i data-lucide="users-2" class="w-5 h-5 mr-3"></i>Resource Management</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">Bench Management</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg">All Resources</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">Resource Directory</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">New Deployments</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="trending-up" class="w-5 h-5 mr-3"></i>Demand & Opportunity</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="award" class="w-5 h-5 mr-3"></i>Skills & Development</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="pie-chart" class="w-5 h-5 mr-3"></i>Capacity Planning</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="landmark" class="w-5 h-5 mr-3"></i>Cross Governance</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>External Workforce</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="settings" class="w-5 h-5 mr-3"></i>Setup & Configuration</a></li>
+                </ul>
+            </div>
+            <div class="p-4 border-t border-gray-700">
+                 <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
+                    <div class="w-10 h-10 rounded-full bg-brand-red text-white flex items-center justify-center font-bold">RM</div>
+                    <div class="ml-3">
+                        <p class="font-semibold text-white">Resource Manager</p>
+                        <p class="text-xs text-gray-500">rm@workforce.io</p>
+                    </div>
+                 </a>
+            </div>
+        </nav>
+
+        <div class="flex-1 flex flex-col">
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10">
+                <div class="flex items-center">
+                    <button id="menu-btn" class="p-2 md:hidden mr-3"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <div>
+                        <h2 id="page-title" class="text-xl sm:text-2xl font-bold text-brand-black">Dashboard</h2>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">Welcome back, here's your workforce overview.</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="relative hidden sm:block"><i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i><input type="text" id="searchInput" placeholder="Search..." class="w-40 lg:w-64 bg-white/50 border border-transparent text-brand-black rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red transition-all-fast"></div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">General Filters</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option>Last 7 months</option><option>Last 30 days</option><option>Last 90 days</option></select>
+                        <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option>All Roles</option><option>Frontend</option><option>Backend</option></select>
+                        <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option>All Locations</option><option>Egypt</option><option>UK</option></select>
+                        <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option>All Capacities</option><option>Overbooked</option><option>Available</option></select>
+                        <select class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option>All Skill Levels</option><option>Expert</option><option>Advanced</option></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+                    <div class="grid grid-cols-2 gap-6">
+                         <div class="card p-5"><div class="flex items-center justify-between"><h3 class="font-semibold text-gray-600">Total Resources</h3><i data-lucide="users" class="w-6 h-6 text-gray-400"></i></div><p id="total-resources" class="text-4xl font-extrabold text-brand-black mt-3">3,540</p></div>
+                        <div class="card p-5"><div class="flex items-center justify-between"><h3 class="font-semibold text-gray-600">On Bench</h3><i data-lucide="user-x" class="w-6 h-6 text-gray-400"></i></div><p id="on-bench" class="text-4xl font-extrabold text-brand-black mt-3">1,150</p></div>
+                        <div class="card p-5"><div class="flex items-center justify-between"><h3 class="font-semibold text-gray-600">Soft Booked</h3><i data-lucide="book-marked" class="w-6 h-6 text-gray-400"></i></div><p id="soft-booked" class="text-4xl font-extrabold text-brand-black mt-3">500</p></div>
+                        <div class="card p-5"><div class="flex items-center justify-between"><h3 class="font-semibold text-gray-600">Hard Booked</h3><i data-lucide="book-check" class="w-6 h-6 text-gray-400"></i></div><p id="hard-booked" class="text-4xl font-extrabold text-brand-black mt-3">93</p></div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-semibold text-gray-600 mb-4">Booking Trend (Last 7 Months)</h3>
+                        <div class="h-64"><canvas id="bookingTrendChart"></canvas></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="card p-6">
+                        <h3 class="font-semibold text-gray-600 mb-4">Demand Fulfillment</h3>
+                        <div class="h-80"><canvas id="demandFulfillmentChart"></canvas></div>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-semibold text-gray-600 mb-4">At-Risk Resources (Projects ending in 30 days)</h3>
+                        <ul id="at-risk-list" class="space-y-3"></ul>
+                    </div>
+                </div>
+
+                <div class="card p-6 mb-6">
+                    <h3 class="font-semibold text-gray-600 mb-4">Skills Hotspot</h3>
+                    <div class="h-96"><canvas id="skillsHotspotChart"></canvas></div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const menuBtn = document.getElementById('menu-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const resManMenu = document.getElementById('resource-management-menu');
+            const activeSubmenuLink = document.querySelector('.nav-link.sub-active');
+
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('open');
+            };
+
+            menuBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+            
+            resManMenu.addEventListener('click', function(e) {
+                const submenuContainer = this.querySelector('.sidebar-submenu-container');
+                const icon = this.querySelector('[data-lucide="chevron-down"]');
+                submenuContainer.classList.toggle('open');
+                icon.classList.toggle('rotate-180');
+            });
+            
+            if (activeSubmenuLink) {
+                const parentMenu = activeSubmenuLink.closest('.sidebar-item');
+                if (parentMenu) {
+                    parentMenu.classList.add('parent-active');
+                    if(parentMenu.querySelector('button')) {
+                        parentMenu.querySelector('button').click();
+                    }
+                }
+            }
+            
+            lucide.createIcons();
+
+            // --- Charting ---
+            new Chart(document.getElementById('bookingTrendChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                    datasets: [{
+                        label: 'Soft Booked',
+                        data: [300, 320, 280, 400, 420, 480, 450],
+                        borderColor: '#F59E0B',
+                        tension: 0.4,
+                        fill: false,
+                    }, {
+                        label: 'Hard Booked',
+                        data: [200, 220, 250, 230, 300, 350, 400],
+                        borderColor: '#10B981',
+                        tension: 0.4,
+                        fill: false,
+                    }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            new Chart(document.getElementById('demandFulfillmentChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Project Phoenix', 'Project Titan', 'Project Nebula', 'Project Olympus', 'Project Nova'],
+                    datasets: [
+                        { label: 'Roles Required', data: [12, 19, 8, 5, 22], backgroundColor: '#9CA3AF' },
+                        { label: 'Resources Assigned', data: [10, 19, 5, 5, 15], backgroundColor: '#10B981' }
+                    ]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+            
+            const atRiskList = document.getElementById('at-risk-list');
+            const atRiskData = [
+                { name: 'James Smith', role: 'Backend Developer', endDate: '2025-09-15' },
+                { name: 'Maria Garcia', role: 'Frontend Developer', endDate: '2025-09-22' },
+                { name: 'David Johnson', role: 'UX Researcher', endDate: '2025-09-28' },
+                { name: 'Emily Williams', role: 'Tester', endDate: '2025-10-01' }
+            ];
+            atRiskList.innerHTML = atRiskData.map(r => `
+                <li class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+                    <div>
+                        <p class="font-semibold">${r.name}</p>
+                        <p class="text-sm text-gray-500">${r.role}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-brand-red">Ends: ${r.endDate}</p>
+                        <a href="#" class="text-xs text-brand-red hover:underline">Find new role</a>
+                    </div>
+                </li>
+            `).join('');
+
+            new Chart(document.getElementById('skillsHotspotChart'), {
+                type: 'bubble',
+                data: {
+                    datasets: [
+                        { label: 'React', data: [{x: 20, y: 30, r: 15}], backgroundColor: 'rgba(239, 68, 68, 0.7)'},
+                        { label: 'Python', data: [{x: 40, y: 10, r: 25}], backgroundColor: 'rgba(59, 130, 246, 0.7)'},
+                        { label: 'Figma', data: [{x: 60, y: 40, r: 10}], backgroundColor: 'rgba(245, 158, 11, 0.7)'},
+                        { label: 'AWS', data: [{x: 80, y: 20, r: 30}], backgroundColor: 'rgba(16, 185, 129, 0.7)'},
+                        { label: 'Java', data: [{x: 50, y: 60, r: 20}], backgroundColor: 'rgba(139, 92, 246, 0.7)'}
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.r} resources`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { title: { display: true, text: 'Demand (Open Roles)' } },
+                        x: { title: { display: true, text: 'Supply (Available Resources)' } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
