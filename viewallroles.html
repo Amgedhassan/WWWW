@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demand Tracking Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Vodafone', sans-serif;
+            background-color: #F0F2F5;
+            color: #0F0F0F;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* --- Aurora Background --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5; z-index: -1;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; filter: blur(100px); opacity: 0.3;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff8a00, transparent 60%);
+            width: 400px; height: 400px; top: -100px; left: -150px;
+            animation: move-aurora-1 15s infinite alternate;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #e60000, transparent 60%);
+            width: 500px; height: 500px; bottom: -150px; right: -200px;
+            animation: move-aurora-2 12s infinite alternate;
+        }
+        @keyframes move-aurora-1 { to { transform: translate(100px, 50px); } }
+        @keyframes move-aurora-2 { to { transform: translate(-80px, -40px); } }
+
+        /* --- Glassmorphism Effect for Main Content --- */
+        .glassmorphic {
+            background: rgba(255, 255, 255, 0.5);
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05);
+        }
+        
+        /* --- Animations & Transitions --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #roles-list tr { opacity: 0; animation: fadeIn 0.5s ease-out forwards; }
+        .transition-all-fast { transition: all 0.2s ease-in-out; }
+        #filter-panel { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
+        #filter-panel.open { transform: translateX(0); }
+        #filter-overlay, #sidebar-overlay, .modal-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+        #filter-overlay.open, #sidebar-overlay.open, .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* --- BRANDED Sidebar Enhancements --- */
+        .sidebar { background-color: #0F0F0F; }
+        .sidebar-item { position: relative; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .parent-active > button { color: #FFFFFF; }
+        .parent-active { position: relative; }
+        .parent-active::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: #e60000; border-top-right-radius: 4px; border-bottom-right-radius: 4px;
+        }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .sidebar-submenu-container { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-in-out; }
+        .sidebar-submenu-container.open { grid-template-rows: 1fr; }
+        .sidebar-submenu { overflow: hidden; }
+        
+        /* --- Table Sorting --- */
+        .sortable-header { cursor: pointer; }
+        .sortable-header:hover { color: #0F0F0F; }
+        
+        /* --- Custom Scrollbar --- */
+        main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        main::-webkit-scrollbar-thumb:hover, .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #374151; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+        /* --- Brand Color Utilities --- */
+        .text-brand-red { color: #e60000; }
+        .bg-brand-red { background-color: #e60000; }
+        .ring-brand-red { --tw-ring-color: #e60000; }
+        .text-brand-black { color: #0F0F0F; }
+        
+        /* --- Custom Styles for Demand Tracking --- */
+        .hard-booked-row {
+            background-color: #E8F5E9; /* A light green to indicate success/completion */
+        }
+        .hard-booked-row:hover {
+            background-color: #D3EADC;
+        }
+    </style>
+</head>
+<body class="text-brand-black">
+    <div class="aurora-background"></div>
+
+    <div class="flex h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 md:hidden"></div>
+
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-40 -translate-x-full md:relative md:translate-x-0">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+                <button id="close-sidebar-btn" class="p-2 md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-grow overflow-y-auto sidebar-scroll">
+                <ul class="px-4 py-4 space-y-1">
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Home/Dashboard</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="users-2" class="w-5 h-5 mr-3"></i>Resource Management</a></li>
+                    
+                    <!-- New Menu Item -->
+                    <li id="planning-menu" class="sidebar-item rounded-lg">
+                        <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all-fast">
+                            <span class="flex items-center"><i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>Resource Planning</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link sub-active flex items-center py-2 px-4 text-sm rounded-lg">Real-time Demand</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">Allocation Planning</a>
+                            </div>
+                        </div>
+                    </li>
+                    
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="trending-up" class="w-5 h-5 mr-3"></i>Demand & Opportunity</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="award" class="w-5 h-5 mr-3"></i>Skills & Development</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="settings" class="w-5 h-5 mr-3"></i>Setup & Configuration</a></li>
+                </ul>
+            </div>
+            <div class="p-4 border-t border-gray-700">
+                 <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
+                     <img src="https://placehold.co/40x40/e60000/FFFFFF?text=P" alt="Admin Avatar" class="w-10 h-10 rounded-full">
+                     <div class="ml-3">
+                         <p class="font-semibold text-white">Project Manager</p>
+                         <p class="text-xs text-gray-500">pm@workforce.io</p>
+                     </div>
+                 </a>
+            </div>
+        </nav>
+
+        <!-- Main Content Wrapper -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10">
+                <div class="flex items-center">
+                    <button id="menu-btn" class="p-2 md:hidden mr-3"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-brand-black">Real-time Demand Tracking</h2>
+                        <nav aria-label="Breadcrumb" class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
+                            <ol class="list-none p-0 inline-flex">
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Home</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Resource Planning</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li aria-current="page"><a href="#" class="text-brand-black font-medium">Real-time Demand</a></li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="relative hidden sm:block"><i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i><input type="text" id="searchInput" placeholder="Search by Role, Project, BC..." class="w-40 md:w-56 lg:w-64 bg-white/50 border border-transparent text-brand-black rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red transition-all-fast"></div>
+                    <button id="filter-toggle-btn" class="flex items-center justify-center h-11 px-3 sm:px-5 bg-white/60 border border-gray-300/50 text-brand-black rounded-lg hover:bg-white/80 transition-all-fast"><i data-lucide="sliders-horizontal" class="w-5 h-5 sm:mr-2"></i><span class="hidden sm:inline">Filters</span></button>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
+                <!-- Insights Section -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="briefcase" class="w-6 h-6 text-gray-400"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Total Roles</h3></div><p id="total-roles" class="text-3xl sm:text-4xl font-extrabold text-brand-black mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="alert-circle" class="w-6 h-6 text-orange-500"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Open</h3></div><p id="open-roles" class="text-3xl sm:text-4xl font-extrabold text-orange-600 mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="user-check" class="w-6 h-6 text-blue-500"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Soft Booked</h3></div><p id="soft-booked-roles" class="text-3xl sm:text-4xl font-extrabold text-blue-600 mt-3">0</p></div>
+                    <div class="card p-4 sm:p-5"><div class="flex items-center"><i data-lucide="check-circle-2" class="w-6 h-6 text-green-500"></i><h3 class="font-semibold text-gray-600 ml-3 text-sm sm:text-base">Hard Booked</h3></div><p id="hard-booked-roles" class="text-3xl sm:text-4xl font-extrabold text-green-600 mt-3">0</p></div>
+                </div>
+                
+                <div id="active-filters-container" class="mb-6"></div>
+
+                <!-- Table Container -->
+                <div class="card overflow-hidden mt-8">
+                    <div class="overflow-x-auto">
+                        <table id="roles-table" class="min-w-full">
+                            <thead id="table-header" class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="role"><div class="flex items-center">Role <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 ml-2 opacity-30"></i></div></th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Identifiers</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="startDate"><div class="flex items-center">Start Date <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 ml-2 opacity-30"></i></div></th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Manager</th>
+                                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="roles-list" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                     <div class="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
+                         <div class="flex items-center space-x-2">
+                             <label for="rows-per-page" class="text-sm text-gray-600">Rows per page:</label>
+                             <select id="rows-per-page" class="rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                                 <option value="10">10</option>
+                                 <option value="20">20</option>
+                                 <option value="50">50</option>
+                                 <option value="100">100</option>
+                             </select>
+                         </div>
+                         <p class="text-sm text-gray-600" id="pagination-info">Showing 0 to 0 of 0 results</p>
+                         <div class="flex items-center space-x-2">
+                             <button id="prev-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                             <span id="page-number" class="text-sm font-medium">Page 1</span>
+                             <button id="next-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                         </div>
+                     </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div id="filter-overlay" class="fixed inset-0 z-30"></div>
+    <aside id="filter-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-40 p-8 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="filter-heading">
+        <div class="flex items-center justify-between">
+            <h2 id="filter-heading" class="text-xl font-bold">Filter Roles</h2>
+            <button id="close-filter-btn" class="p-1 rounded-full hover:bg-gray-100" aria-label="Close filter panel"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div>
+            <label for="saved-filters-select" class="text-sm font-semibold text-gray-600">Use a Saved Filter</label>
+            <div class="flex items-center space-x-2 mt-2">
+                <select id="saved-filters-select" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option value="">Select a filter...</option></select>
+                <button id="delete-saved-filter-btn" class="p-2 text-gray-400 hover:text-brand-red" aria-label="Delete selected filter"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            </div>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div id="filter-form" class="flex-grow space-y-6 overflow-y-auto pr-2">
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-600">Fulfillment Status</legend>
+                <div class="mt-2 space-y-2" id="status-filters"></div>
+            </fieldset>
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-600">Work Location</legend>
+                <div class="mt-2 space-y-2" id="location-filters"></div>
+            </fieldset>
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-600">Required Level</legend>
+                <div class="mt-2 space-y-2" id="level-filters"></div>
+            </fieldset>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div class="space-y-2">
+            <label for="save-filter-name" class="text-sm font-semibold text-gray-600">Save Current Filter</label>
+            <div class="flex items-center space-x-2">
+                <input type="text" id="save-filter-name" placeholder="e.g., Open UK Roles" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                <button id="save-filter-btn" class="h-10 px-4 bg-brand-black text-white rounded-lg font-semibold text-sm hover:bg-gray-800 transition-all-fast">Save</button>
+            </div>
+        </div>
+        <div class="flex-shrink-0 flex items-center space-x-4 mt-8">
+            <button id="reset-filters-btn" class="flex-1 h-11 px-5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all-fast">Reset</button>
+            <button id="apply-filters-btn" class="flex-1 h-11 px-5 bg-brand-red text-white rounded-lg font-semibold hover:bg-red-700 transition-all-fast">Apply Filters</button>
+        </div>
+    </aside>
+    
+    <!-- Role Details Modal -->
+    <div id="role-details-modal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-lg">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-bold" id="modal-role-title">Role Details</h3>
+                    <p class="mt-1 text-gray-600" id="modal-role-id"></p>
+                </div>
+                <button id="close-modal-btn" class="p-1 rounded-full hover:bg-gray-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="mt-6 border-t pt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm" id="modal-details-content">
+                <!-- Details will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DATA GENERATION ---
+        const generateRoles = (count) => {
+            const roles = ['Software Engineer', 'Project Manager', 'QA Engineer', 'UX Designer', 'Data Scientist', 'DevOps Engineer'];
+            const locations = ['UK', 'USA', 'Canada', 'Germany', 'India', 'Remote'];
+            const levels = ['Junior', 'Mid-level', 'Senior', 'Lead', 'Principal'];
+            const managers = ['John Doe', 'Jane Smith', 'Peter Jones', 'Mary Williams'];
+            const statuses = ['Open', 'Backfill Required', 'Resources Soft Booked', 'Resource Proposed', 'Hard Booked'];
+            const generated = [];
+
+            for (let i = 0; i < count; i++) {
+                const startDate = new Date(Date.now() + (Math.random() - 0.2) * 90 * 24 * 60 * 60 * 1000);
+                const endDate = new Date(startDate.getTime() + (90 + Math.random() * 180) * 24 * 60 * 60 * 1000);
+                
+                generated.push({
+                    roleId: 38500 + i,
+                    projectId: `PRJ-${1000 + Math.floor(Math.random() * 900)}`,
+                    businessCaseId: `BC-${2000 + Math.floor(Math.random() * 900)}`,
+                    fulfillmentStatus: statuses[Math.floor(Math.random() * statuses.length)],
+                    workLocation: locations[Math.floor(Math.random() * locations.length)],
+                    role: roles[Math.floor(Math.random() * roles.length)],
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0],
+                    percentageAllocation: 100,
+                    requiredLevel: levels[Math.floor(Math.random() * levels.length)],
+                    allocatedResourceManager: managers[Math.floor(Math.random() * managers.length)],
+                });
+            }
+            return generated;
+        };
+
+        const allRoles = generateRoles(250);
+
+        // --- STATE MANAGEMENT ---
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let currentFilters = { status: [], location: [], level: [] };
+        const statusOrder = ['Open', 'Backfill Required', 'Resources Soft Booked', 'Resource Proposed', 'Hard Booked'];
+        let currentSort = { key: 'startDate', direction: 'asc' };
+        let savedFilters = [];
+
+        // --- DOM ELEMENTS ---
+        const rolesList = document.getElementById('roles-list');
+        const searchInput = document.getElementById('searchInput');
+        const tableHeader = document.getElementById('table-header');
+        const filterPanel = document.getElementById('filter-panel');
+        const filterOverlay = document.getElementById('filter-overlay');
+        const filterToggleBtn = document.getElementById('filter-toggle-btn');
+        const closeFilterBtn = document.getElementById('close-filter-btn');
+        const applyFiltersBtn = document.getElementById('apply-filters-btn');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const paginationInfo = document.getElementById('pagination-info');
+        const pageNumber = document.getElementById('page-number');
+        const rowsPerPageSelect = document.getElementById('rows-per-page');
+        const activeFiltersContainer = document.getElementById('active-filters-container');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const roleDetailsModal = document.getElementById('role-details-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const saveFilterBtn = document.getElementById('save-filter-btn');
+        const saveFilterNameInput = document.getElementById('save-filter-name');
+        const savedFiltersSelect = document.getElementById('saved-filters-select');
+        const deleteSavedFilterBtn = document.getElementById('delete-saved-filter-btn');
+
+        // --- RENDER FUNCTIONS ---
+        const getStatusPill = (status) => {
+            let styles = '';
+            switch (status) {
+                case 'Open':
+                case 'Backfill Required':
+                    styles = 'bg-orange-100 text-orange-800'; break;
+                case 'Resources Soft Booked':
+                case 'Resource Proposed':
+                    styles = 'bg-blue-100 text-blue-800'; break;
+                case 'Hard Booked':
+                    styles = 'bg-green-100 text-green-800'; break;
+                default:
+                    styles = 'bg-gray-100 text-gray-800';
+            }
+            return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${styles}">${status}</span>`;
+        };
+
+        const renderRoles = (data) => {
+            rolesList.innerHTML = '';
+            if (data.length === 0) {
+                rolesList.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-gray-500">No roles match the current criteria.</td></tr>`;
+                return;
+            }
+            data.forEach((role, index) => {
+                const row = document.createElement('tr');
+                row.style.animationDelay = `${index * 50}ms`;
+                if(role.fulfillmentStatus === 'Hard Booked') {
+                    row.classList.add('hard-booked-row');
+                }
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-semibold text-brand-black">${role.role}</div>
+                        <div class="text-sm text-gray-500">${role.requiredLevel}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        <div>Role ID: <span class="font-medium text-gray-800">${role.roleId}</span></div>
+                        <div>Project ID: <span class="font-medium text-gray-800">${role.projectId}</span></div>
+                        <div>BC ID: <span class="font-medium text-gray-800">${role.businessCaseId}</span></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">${getStatusPill(role.fulfillmentStatus)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.startDate}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${role.workLocation}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${role.allocatedResourceManager}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button type="button" class="actions-toggle p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600" data-role-id="${role.roleId}">
+                            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                        <div id="actions-menu-${role.roleId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
+                            <div class="py-1">
+                                <a href="#" class="view-details-btn flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-role-id="${role.roleId}">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-3"></i>View Role Details
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                rolesList.appendChild(row);
+            });
+            lucide.createIcons();
+        };
+
+        const updateDashboardMetrics = (data) => {
+            document.getElementById('total-roles').textContent = data.length;
+            document.getElementById('open-roles').textContent = data.filter(r => r.fulfillmentStatus === 'Open' || r.fulfillmentStatus === 'Backfill Required').length;
+            document.getElementById('soft-booked-roles').textContent = data.filter(r => r.fulfillmentStatus === 'Resources Soft Booked' || r.fulfillmentStatus === 'Resource Proposed').length;
+            document.getElementById('hard-booked-roles').textContent = data.filter(r => r.fulfillmentStatus === 'Hard Booked').length;
+        };
+        
+        const renderActiveFilters = () => {
+             activeFiltersContainer.innerHTML = '';
+             const filtersActive = currentFilters.status.length > 0 || currentFilters.location.length > 0 || currentFilters.level.length > 0;
+
+             if (!filtersActive) return;
+
+             let tagsHtml = '<div class="flex items-center flex-wrap gap-2"><span class="text-sm font-semibold">Active Filters:</span>';
+             
+             currentFilters.status.forEach(val => {
+                 tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Status: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="status" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+             });
+             currentFilters.location.forEach(val => {
+                 tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Location: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="location" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+             });
+             currentFilters.level.forEach(val => {
+                 tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Level: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="level" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+             });
+
+             tagsHtml += `<button id="clear-all-filters-btn" class="text-sm font-semibold text-brand-red hover:underline ml-4">Clear All</button></div>`;
+             activeFiltersContainer.innerHTML = tagsHtml;
+             lucide.createIcons();
+        };
+
+        // --- LOGIC FUNCTIONS (Filter, Sort, Search, Paginate) ---
+        const applyAllLogic = () => {
+            let processedData = [...allRoles];
+            const searchTerm = searchInput.value.toLowerCase();
+
+            if (searchTerm) {
+                processedData = processedData.filter(r => 
+                    r.role.toLowerCase().includes(searchTerm) ||
+                    r.projectId.toLowerCase().includes(searchTerm) ||
+                    r.businessCaseId.toLowerCase().includes(searchTerm) ||
+                    r.roleId.toString().includes(searchTerm)
+                );
+            }
+
+            processedData = processedData.filter(r => {
+                const statusMatch = currentFilters.status.length === 0 || currentFilters.status.includes(r.fulfillmentStatus);
+                const locationMatch = currentFilters.location.length === 0 || currentFilters.location.includes(r.workLocation);
+                const levelMatch = currentFilters.level.length === 0 || currentFilters.level.includes(r.requiredLevel);
+                return statusMatch && locationMatch && levelMatch;
+            });
+            
+            // Default sort + custom sort
+            processedData.sort((a, b) => {
+                // Primary sort: Custom key and direction
+                const key = currentSort.key;
+                let valA = a[key], valB = b[key];
+                if (key === 'startDate') { valA = new Date(valA); valB = new Date(valB); }
+
+                let comparison = 0;
+                if (valA < valB) comparison = -1;
+                if (valA > valB) comparison = 1;
+                
+                const primarySortResult = currentSort.direction === 'asc' ? comparison : -comparison;
+
+                if(primarySortResult !== 0) return primarySortResult;
+
+                // Secondary sort: Status
+                const statusIndexA = statusOrder.indexOf(a.fulfillmentStatus);
+                const statusIndexB = statusOrder.indexOf(b.fulfillmentStatus);
+                const statusSortResult = statusIndexA - statusIndexB;
+
+                if(statusSortResult !== 0) return statusSortResult;
+
+                // Tertiary sort: Start Date (if not primary)
+                if (key !== 'startDate') {
+                    const dateA = new Date(a.startDate);
+                    const dateB = new Date(b.startDate);
+                    return dateA - dateB;
+                }
+                
+                return 0;
+            });
+
+            const totalItems = processedData.length;
+            const paginatedData = processedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+            renderRoles(paginatedData);
+            updateDashboardMetrics(allRoles); // Metrics based on all data
+            updatePaginationUI(totalItems);
+            renderActiveFilters();
+        };
+        
+        const updatePaginationUI = (totalItems) => {
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+            const endItem = Math.min(currentPage * rowsPerPage, totalItems);
+
+            paginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalItems} results`;
+            pageNumber.textContent = `Page ${currentPage} of ${totalPages > 0 ? totalPages : 1}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        };
+
+        // --- FILTER PANEL LOGIC ---
+        const toggleFilterPanel = () => {
+            filterPanel.classList.toggle('open');
+            filterOverlay.classList.toggle('open');
+        };
+
+        const populateFilters = () => {
+            const statuses = [...new Set(allRoles.map(r => r.fulfillmentStatus))];
+            const locations = [...new Set(allRoles.map(r => r.workLocation))];
+            const levels = [...new Set(allRoles.map(r => r.requiredLevel))];
+
+            document.getElementById('status-filters').innerHTML = statuses.map(s => `<label class="flex items-center"><input type="checkbox" name="status" value="${s}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${s}</span></label>`).join('');
+            document.getElementById('location-filters').innerHTML = locations.map(l => `<label class="flex items-center"><input type="checkbox" name="location" value="${l}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${l}</span></label>`).join('');
+            document.getElementById('level-filters').innerHTML = levels.map(l => `<label class="flex items-center"><input type="checkbox" name="level" value="${l}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${l}</span></label>`).join('');
+        };
+
+        const loadSavedFilters = () => {
+            const filtersFromStorage = localStorage.getItem('wfm_demand_savedFilters');
+            savedFilters = filtersFromStorage ? JSON.parse(filtersFromStorage) : [];
+            savedFiltersSelect.innerHTML = '<option value="">Select a filter...</option>';
+            savedFilters.forEach(filter => {
+                const option = document.createElement('option');
+                option.value = filter.name;
+                option.textContent = filter.name;
+                savedFiltersSelect.appendChild(option);
+            });
+        };
+
+        const applySavedFilter = (filterName) => {
+            const filterToApply = savedFilters.find(f => f.name === filterName);
+            if (!filterToApply) return;
+            document.querySelectorAll('#filter-form input[type="checkbox"]').forEach(c => c.checked = false);
+            filterToApply.settings.status.forEach(s => { const checkbox = document.querySelector(`#status-filters input[value="${s}"]`); if (checkbox) checkbox.checked = true; });
+            filterToApply.settings.location.forEach(l => { const checkbox = document.querySelector(`#location-filters input[value="${l}"]`); if (checkbox) checkbox.checked = true; });
+            filterToApply.settings.level.forEach(l => { const checkbox = document.querySelector(`#level-filters input[value="${l}"]`); if (checkbox) checkbox.checked = true; });
+        };
+
+        applyFiltersBtn.addEventListener('click', () => {
+            currentFilters.status = Array.from(document.querySelectorAll('#status-filters input:checked')).map(n => n.value);
+            currentFilters.location = Array.from(document.querySelectorAll('#location-filters input:checked')).map(n => n.value);
+            currentFilters.level = Array.from(document.querySelectorAll('#level-filters input:checked')).map(n => n.value);
+            currentPage = 1;
+            applyAllLogic();
+            toggleFilterPanel();
+        });
+
+        resetFiltersBtn.addEventListener('click', () => {
+            document.querySelectorAll('#filter-form input[type="checkbox"]').forEach(c => c.checked = false);
+            savedFiltersSelect.value = '';
+        });
+
+        // --- SORTING LOGIC ---
+        const updateSortUI = () => {
+            tableHeader.querySelectorAll('.sortable-header').forEach(header => {
+                const icon = header.querySelector('i');
+                if (header.dataset.sortKey === currentSort.key) {
+                    icon.outerHTML = currentSort.direction === 'asc' ? `<i data-lucide="arrow-up" class="w-3.5 h-3.5 ml-2"></i>` : `<i data-lucide="arrow-down" class="w-3.5 h-3.5 ml-2"></i>`;
+                } else {
+                    icon.outerHTML = `<i data-lucide="arrow-up-down" class="w-3.5 h-3.5 ml-2 opacity-30"></i>`;
+                }
+            });
+            lucide.createIcons();
+        };
+
+        tableHeader.addEventListener('click', (e) => {
+            const header = e.target.closest('.sortable-header');
+            if (!header) return;
+            const sortKey = header.dataset.sortKey;
+            if (currentSort.key === sortKey) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.key = sortKey;
+                currentSort.direction = 'asc';
+            }
+            currentPage = 1;
+            updateSortUI();
+            applyAllLogic();
+        });
+        
+        // --- PAGINATION LOGIC ---
+        prevPageBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; applyAllLogic(); } });
+        nextPageBtn.addEventListener('click', () => { currentPage++; applyAllLogic(); });
+        rowsPerPageSelect.addEventListener('change', (e) => {
+            rowsPerPage = parseInt(e.target.value, 10);
+            currentPage = 1;
+            applyAllLogic();
+        });
+        
+        // --- REMOVE ACTIVE FILTERS ---
+        activeFiltersContainer.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('button');
+            if (!removeBtn) return;
+
+            if (removeBtn.id === 'clear-all-filters-btn') {
+                currentFilters = { status: [], location: [], level: [] };
+            } else {
+                const { filterType, filterValue } = removeBtn.dataset;
+                if (Array.isArray(currentFilters[filterType])) {
+                    currentFilters[filterType] = currentFilters[filterType].filter(val => val !== filterValue);
+                }
+            }
+            
+            currentPage = 1;
+            applyAllLogic();
+        });
+        
+        // --- MODAL LOGIC ---
+        const openRoleDetailsModal = (role) => {
+            document.getElementById('modal-role-title').textContent = `${role.role} - ${role.requiredLevel}`;
+            document.getElementById('modal-role-id').textContent = `Role ID: ${role.roleId}`;
+            
+            const contentEl = document.getElementById('modal-details-content');
+            contentEl.innerHTML = `
+                <div><p class="text-gray-500">Project ID</p><p class="font-medium">${role.projectId}</p></div>
+                <div><p class="text-gray-500">Business Case ID</p><p class="font-medium">${role.businessCaseId}</p></div>
+                <div><p class="text-gray-500">Fulfillment Status</p><p class="font-medium">${role.fulfillmentStatus}</p></div>
+                <div><p class="text-gray-500">Work Location</p><p class="font-medium">${role.workLocation}</p></div>
+                <div><p class="text-gray-500">Start Date</p><p class="font-medium">${role.startDate}</p></div>
+                <div><p class="text-gray-500">End Date</p><p class="font-medium">${role.endDate}</p></div>
+                <div><p class="text-gray-500">Allocation</p><p class="font-medium">${role.percentageAllocation}%</p></div>
+                <div><p class="text-gray-500">Resource Manager</p><p class="font-medium">${role.allocatedResourceManager}</p></div>
+            `;
+
+            roleDetailsModal.classList.remove('hidden');
+            roleDetailsModal.classList.add('flex');
+        };
+        
+        const closeRoleDetailsModal = () => {
+            roleDetailsModal.classList.add('hidden');
+            roleDetailsModal.classList.remove('flex');
+        };
+        
+        // --- EVENT DELEGATION for dynamic elements ---
+        document.body.addEventListener('click', (e) => {
+            // Actions menu toggle
+            const actionsToggle = e.target.closest('.actions-toggle');
+            document.querySelectorAll('[id^="actions-menu-"]').forEach(menu => {
+                if (!actionsToggle || menu.id !== `actions-menu-${actionsToggle.dataset.roleId}`) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            if (actionsToggle) {
+                const roleId = parseInt(actionsToggle.dataset.roleId, 10);
+                const menu = document.getElementById(`actions-menu-${roleId}`);
+                menu.classList.toggle('hidden');
+            }
+
+            // View details button click
+            const detailsBtn = e.target.closest('.view-details-btn');
+            if (detailsBtn) {
+                e.preventDefault();
+                const roleId = parseInt(detailsBtn.dataset.roleId, 10);
+                const role = allRoles.find(r => r.roleId === roleId);
+                if (role) {
+                    openRoleDetailsModal(role);
+                }
+            }
+        });
+
+        closeModalBtn.addEventListener('click', closeRoleDetailsModal);
+        roleDetailsModal.addEventListener('click', (e) => {
+            if(e.target === roleDetailsModal) closeRoleDetailsModal();
+        });
+
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateFilters();
+            loadSavedFilters();
+            updateSortUI();
+            applyAllLogic();
+            lucide.createIcons();
+            
+            searchInput.addEventListener('input', () => { currentPage = 1; applyAllLogic(); });
+            
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('open');
+            };
+
+            menuBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+
+            filterToggleBtn.addEventListener('click', toggleFilterPanel);
+            closeFilterBtn.addEventListener('click', toggleFilterPanel);
+            filterOverlay.addEventListener('click', toggleFilterPanel);
+            
+            const planningMenu = document.getElementById('planning-menu');
+            planningMenu.addEventListener('click', function(e) {
+                const submenuContainer = this.querySelector('.sidebar-submenu-container');
+                const icon = this.querySelector('[data-lucide="chevron-down"]');
+                submenuContainer.classList.toggle('open');
+                icon.classList.toggle('rotate-180');
+            });
+            
+            const activeSubmenuLink = document.querySelector('.nav-link.sub-active');
+            if (activeSubmenuLink) {
+                const parentMenu = activeSubmenuLink.closest('.sidebar-item');
+                if (parentMenu) {
+                    parentMenu.classList.add('parent-active');
+                    parentMenu.querySelector('button').click();
+                }
+            }
+            
+            // --- SAVED FILTERS EVENT LISTENERS ---
+            saveFilterBtn.addEventListener('click', () => {
+                const name = saveFilterNameInput.value.trim();
+                if (!name) { 
+                    alert('Please enter a name for the filter.'); 
+                    return; 
+                }
+                if (savedFilters.some(f => f.name === name)) { 
+                    if (!confirm(`A filter named "${name}" already exists. Do you want to overwrite it?`)) { 
+                        return; 
+                    } 
+                    savedFilters = savedFilters.filter(f => f.name !== name); 
+                }
+                const newFilter = { 
+                    name: name, 
+                    settings: { 
+                        status: Array.from(document.querySelectorAll('#status-filters input:checked')).map(n => n.value), 
+                        location: Array.from(document.querySelectorAll('#location-filters input:checked')).map(n => n.value), 
+                        level: Array.from(document.querySelectorAll('#level-filters input:checked')).map(n => n.value) 
+                    } 
+                };
+                savedFilters.push(newFilter);
+                localStorage.setItem('wfm_demand_savedFilters', JSON.stringify(savedFilters));
+                saveFilterNameInput.value = '';
+                loadSavedFilters();
+                savedFiltersSelect.value = name;
+            });
+
+            deleteSavedFilterBtn.addEventListener('click', () => {
+                const selectedFilterName = savedFiltersSelect.value;
+                if (!selectedFilterName) { 
+                    alert('Please select a filter to delete.'); 
+                    return; 
+                }
+                if (confirm(`Are you sure you want to delete the filter "${selectedFilterName}"?`)) {
+                    savedFilters = savedFilters.filter(f => f.name !== selectedFilterName);
+                    localStorage.setItem('wfm_demand_savedFilters', JSON.stringify(savedFilters));
+                    loadSavedFilters();
+                }
+            });
+
+            savedFiltersSelect.addEventListener('change', (e) => { 
+                applySavedFilter(e.target.value); 
+            });
+        });
+    </script>
+</body>
+</html>
