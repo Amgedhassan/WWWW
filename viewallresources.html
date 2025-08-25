@@ -6,13 +6,13 @@
     <title>Modern Resource Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: 'Vodafone', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #F0F2F5;
             color: #0F0F0F;
             -webkit-font-smoothing: antialiased;
@@ -90,10 +90,10 @@
         .sortable-header:hover { color: #0F0F0F; }
         
         /* --- Custom Scrollbar --- */
-        main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar { width: 6px; }
-        main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-        main::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
-        main::-webkit-scrollbar-thumb:hover, .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar, #filter-form::-webkit-scrollbar { width: 6px; }
+        main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track, #filter-form::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb, #filter-form::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        main::-webkit-scrollbar-thumb:hover, .sidebar-scroll::-webkit-scrollbar-thumb:hover, #filter-form::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
         .sidebar-scroll::-webkit-scrollbar-thumb { background: #374151; }
         .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #4B5563; }
 
@@ -102,6 +102,12 @@
         .bg-brand-red { background-color: #e60000; }
         .ring-brand-red { --tw-ring-color: #e60000; }
         .text-brand-black { color: #0F0F0F; }
+
+        /* --- Skill Filter Styles --- */
+        .skill-tag {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
     </style>
 </head>
 <body class="text-brand-black">
@@ -149,11 +155,11 @@
             </div>
             <div class="p-4 border-t border-gray-700">
                  <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
-                    <img src="https://placehold.co/40x40/e60000/FFFFFF?text=A" alt="Admin Avatar" class="w-10 h-10 rounded-full">
-                    <div class="ml-3">
-                        <p class="font-semibold text-white">HR Manager</p>
-                        <p class="text-xs text-gray-500">hr.manager@workforce.io</p>
-                    </div>
+                     <img src="https://placehold.co/40x40/e60000/FFFFFF?text=A" alt="Admin Avatar" class="w-10 h-10 rounded-full">
+                     <div class="ml-3">
+                         <p class="font-semibold text-white">HR Manager</p>
+                         <p class="text-xs text-gray-500">hr.manager@workforce.io</p>
+                     </div>
                  </a>
             </div>
         </nav>
@@ -172,7 +178,7 @@
                               <li class="flex items-center"><a href="#" class="hover:text-brand-red">Resource Management</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
                               <li aria-current="page"><a href="#" class="text-brand-black font-medium">All Resources Details</a></li>
                             </ol>
-                          </nav>
+                        </nav>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-4">
@@ -194,11 +200,6 @@
                 
                 <div id="active-filters-container" class="mb-6"></div>
 
-                <div class="card p-6">
-                    <h3 class="font-semibold text-gray-600 mb-4">Resource Status Distribution</h3>
-                    <div class="h-64 flex items-center justify-center"><canvas id="statusChart"></canvas></div>
-                </div>
-
                 <!-- Table Container -->
                 <div class="card overflow-hidden mt-8">
                     <div class="overflow-x-auto">
@@ -218,22 +219,22 @@
                         </table>
                     </div>
                      <div class="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
-                        <div class="flex items-center space-x-2">
-                            <label for="rows-per-page" class="text-sm text-gray-600">Rows per page:</label>
-                            <select id="rows-per-page" class="rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
-                                <option value="7">7</option>
-                                <option value="15">15</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                            </select>
-                        </div>
-                        <p class="text-sm text-gray-600" id="pagination-info">Showing 0 to 0 of 0 results</p>
-                        <div class="flex items-center space-x-2">
-                            <button id="prev-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                            <span id="page-number" class="text-sm font-medium">Page 1</span>
-                            <button id="next-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-                        </div>
-                    </div>
+                         <div class="flex items-center space-x-2">
+                             <label for="rows-per-page" class="text-sm text-gray-600">Rows per page:</label>
+                             <select id="rows-per-page" class="rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                                 <option value="7">7</option>
+                                 <option value="15">15</option>
+                                 <option value="25">25</option>
+                                 <option value="50">50</option>
+                             </select>
+                         </div>
+                         <p class="text-sm text-gray-600" id="pagination-info">Showing 0 to 0 of 0 results</p>
+                         <div class="flex items-center space-x-2">
+                             <button id="prev-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                             <span id="page-number" class="text-sm font-medium">Page 1</span>
+                             <button id="next-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                         </div>
+                     </div>
                 </div>
             </main>
         </div>
@@ -257,14 +258,18 @@
         <div class="border-t -mx-8 my-6"></div>
         <div id="filter-form" class="flex-grow space-y-6 overflow-y-auto pr-2">
             <fieldset>
-                <div class="flex justify-between items-center">
-                    <legend class="text-sm font-semibold text-gray-600">Status</legend>
-                    <div>
-                        <button class="text-xs font-medium text-brand-red hover:underline" data-action="select-all" data-target="status-filters">Select All</button> /
-                        <button class="text-xs font-medium text-brand-red hover:underline" data-action="clear-all" data-target="status-filters">Clear</button>
-                    </div>
-                </div>
+                <legend class="text-sm font-semibold text-gray-600">Status</legend>
                 <div class="mt-2 space-y-2" id="status-filters"></div>
+            </fieldset>
+             <!-- Skill Filter -->
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-600">Skills</legend>
+                <div class="relative mt-2">
+                    <div id="skill-tags-container" class="flex flex-wrap gap-2 items-center p-2 border border-gray-300 rounded-md bg-white">
+                         <input type="text" id="skill-search-input" placeholder="Search for skills..." class="flex-grow border-none focus:ring-0 text-sm">
+                    </div>
+                    <div id="skill-suggestions" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg hidden max-h-48 overflow-y-auto"></div>
+                </div>
             </fieldset>
             <fieldset>
                 <div class="flex justify-between items-center">
@@ -274,8 +279,31 @@
                         <button class="text-xs font-medium text-brand-red hover:underline" data-action="clear-all" data-target="location-filters">Clear</button>
                     </div>
                 </div>
-                <div class="mt-2 space-y-2" id="location-filters"></div>
+                <div class="mt-2 grid grid-cols-3 gap-2" id="location-filters"></div>
             </fieldset>
+            <fieldset>
+                 <div class="flex justify-between items-center">
+                    <legend class="text-sm font-semibold text-gray-600">Level</legend>
+                    <div>
+                        <button class="text-xs font-medium text-brand-red hover:underline" data-action="select-all" data-target="level-filters">Select All</button> /
+                        <button class="text-xs font-medium text-brand-red hover:underline" data-action="clear-all" data-target="level-filters">Clear</button>
+                    </div>
+                </div>
+                <div class="mt-2 grid grid-cols-2 gap-2" id="level-filters"></div>
+            </fieldset>
+            <div>
+                <label class="text-sm font-semibold text-gray-600">Availability Date</label>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="availability-from" class="text-xs text-gray-500">From</label>
+                        <input type="date" id="availability-from" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="availability-to" class="text-xs text-gray-500">To</label>
+                        <input type="date" id="availability-to" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                </div>
+            </div>
              <div>
                 <label for="locked-filter" class="text-sm font-semibold text-gray-600">Lock Status</label>
                 <select id="locked-filter" class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
@@ -297,41 +325,21 @@
         </div>
     </aside>
 
-    <!-- Soft Book Modal -->
-    <div id="soft-book-modal" class="modal-overlay fixed inset-0 z-50 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
-            <h3 class="text-lg font-bold">Soft Book Resource</h3>
-            <p id="soft-book-resource-name" class="mt-1 text-gray-600"></p>
-            <div id="soft-book-warning" class="hidden mt-4 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm"></div>
-            <div class="mt-6">
-                <label for="role-select" class="text-sm font-semibold text-gray-600">Select a Role to Book</label>
-                <select id="role-select" class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"></select>
-            </div>
-            <div class="mt-8 flex justify-end space-x-4">
-                <button id="cancel-soft-book-btn" class="h-11 px-5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200">Cancel</button>
-                <button id="confirm-soft-book-btn" class="h-11 px-5 bg-brand-red text-white rounded-lg font-semibold hover:bg-red-700">Confirm Booking</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Notification Toast -->
-    <div id="notification-toast" class="fixed top-8 right-8 bg-brand-black text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-[200%] transition-transform duration-300 ease-in-out z-50">
-        <p id="notification-message"></p>
-    </div>
-
     <script>
         // --- DATA GENERATION ---
         const generateResources = (count) => {
             const firstNames = ['Theresa', 'Dianne', 'Cody', 'Esther', 'Jenny', 'Robert', 'Jacob', 'Kristin', 'Annette', 'Savannah', 'John', 'Jane', 'Peter', 'Mary', 'Paul', 'Jennifer'];
             const lastNames = ['Webb', 'Russell', 'Fisher', 'Howard', 'Wilson', 'Fox', 'Jones', 'Watson', 'Black', 'Nguyen', 'Smith', 'Doe', 'Parker', 'Lee', 'Green', 'Hall'];
-            const locations = ['UK', 'USA', 'Canada', 'Germany', 'India'];
+            const locations = ['UK', 'USA', 'Canada', 'Germany', 'India', 'Egypt', 'Spain', 'Romania', 'Portugal', 'South Africa', 'Australia', 'New Zealand'];
             const statuses = ['Fully Utilized', 'Available', 'Partially Utilized'];
+            const resourceLevels = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7'];
             const skills = [
-                { skill: 'React', level: 'Expert' }, { skill: 'JavaScript', level: 'Expert' }, { skill: 'Figma', level: 'Expert' },
-                { skill: 'UI/UX', level: 'Advanced' }, { skill: 'AWS', level: 'Advanced' }, { skill: 'Agile', level: 'Expert' },
-                { skill: 'Jira', level: 'Advanced' }, { skill: 'SEO', level: 'Expert' }, { skill: 'Salesforce', level: 'Advanced' },
-                { skill: 'Python', level: 'Expert' }, { skill: 'Java', level: 'Advanced' }, { skill: 'Spring', level: 'Advanced' },
-                { skill: 'Go', level: 'Expert' }, { skill: 'Next.js', level: 'Advanced' }, { skill: 'SQL', level: 'Expert' },
+                { skill: 'React', proficiency: 'Expert' }, { skill: 'JavaScript', proficiency: 'Expert' }, { skill: 'Figma', proficiency: 'Expert' },
+                { skill: 'UI/UX', proficiency: 'Intermediate' }, { skill: 'AWS', proficiency: 'Intermediate' }, { skill: 'Agile', proficiency: 'Expert' },
+                { skill: 'Jira', proficiency: 'Intermediate' }, { skill: 'SEO', proficiency: 'Expert' }, { skill: 'Salesforce', proficiency: 'Beginner' },
+                { skill: 'Python', proficiency: 'Expert' }, { skill: 'Java', proficiency: 'Intermediate' }, { skill: 'Spring', proficiency: 'Beginner' },
+                { skill: 'Go', proficiency: 'Expert' }, { skill: 'Next.js', proficiency: 'Intermediate' }, { skill: 'SQL', proficiency: 'Beginner' },
+                { skill: 'Project Management', proficiency: 'Expert' },
             ];
 
             const generated = [];
@@ -340,7 +348,7 @@
                 const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
                 const status = statuses[Math.floor(Math.random() * statuses.length)];
                 const benchAging = status === 'Available' ? Math.floor(Math.random() * 100) : null;
-                const availabilityDate = status !== 'Available' ? new Date(Date.now() + Math.random() * 2 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null;
+                const availabilityDate = status !== 'Fully Utilized' ? new Date(Date.now() + (Math.random() - 0.3) * 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null;
                 const numSkills = Math.floor(Math.random() * 2) + 1;
                 const resourceSkills = [];
                 for(let j=0; j<numSkills; j++) {
@@ -350,6 +358,7 @@
                 generated.push({
                     id: 27874 + i,
                     name: `${firstName} ${lastName}`,
+                    level: resourceLevels[Math.floor(Math.random() * resourceLevels.length)],
                     status: status,
                     utilizationPercent: status === 'Fully Utilized' ? 100 : (status === 'Available' ? 0 : [25, 50, 75][Math.floor(Math.random() * 3)]),
                     location: locations[Math.floor(Math.random() * locations.length)],
@@ -358,23 +367,29 @@
                     availabilityDate: availabilityDate,
                     locked: Math.random() > 0.8,
                     avatar: firstName.charAt(0),
-                    softBookedRoles: Math.random() > 0.9 ? ['Project Phoenix'] : []
+                    lookingForRole: Math.random() > 0.7
                 });
             }
             return generated;
         };
 
         const resources = generateResources(6800);
-        const availableRoles = ['Project Phoenix', 'Project Titan', 'Project Nebula', 'Project Olympus'];
+        const allSkills = [...new Set(resources.flatMap(r => r.skills.map(s => s.skill)))].sort();
 
         // --- STATE MANAGEMENT ---
         let currentPage = 1;
         let rowsPerPage = 7;
-        let currentFilters = { status: [], location: [], locked: 'all' };
+        let currentFilters = { 
+            status: [], 
+            location: [], 
+            level: [],
+            skills: [],
+            availabilityFrom: '',
+            availabilityTo: '',
+            locked: 'all' 
+        };
         let currentSort = { key: 'name', direction: 'asc' };
         let savedFilters = [];
-        let statusChartInstance = null;
-        let resourceToBookId = null;
 
         // --- DOM ELEMENTS ---
         const resourceList = document.getElementById('resource-list');
@@ -400,17 +415,12 @@
         const sidebarOverlay = document.getElementById('sidebar-overlay');
         const menuBtn = document.getElementById('menu-btn');
         const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-        const softBookModal = document.getElementById('soft-book-modal');
-        const softBookResourceName = document.getElementById('soft-book-resource-name');
-        const softBookWarning = document.getElementById('soft-book-warning');
-        const roleSelect = document.getElementById('role-select');
-        const cancelSoftBookBtn = document.getElementById('cancel-soft-book-btn');
-        const confirmSoftBookBtn = document.getElementById('confirm-soft-book-btn');
-        const notificationToast = document.getElementById('notification-toast');
-        const notificationMessage = document.getElementById('notification-message');
+        const skillSearchInput = document.getElementById('skill-search-input');
+        const skillSuggestions = document.getElementById('skill-suggestions');
+        const skillTagsContainer = document.getElementById('skill-tags-container');
 
         // --- RENDER FUNCTIONS ---
-        const getStatusPill = (status, percent, isSoftBooked) => {
+        const getStatusPill = (status, percent, lookingForRole) => {
             let styles = '', text = status;
             switch (status) {
                 case 'Fully Utilized': styles = 'bg-green-100/80 text-green-800'; break;
@@ -418,16 +428,8 @@
                 case 'Available': styles = 'bg-blue-100/80 text-blue-800'; break;
                 default: styles = 'bg-gray-100/80 text-gray-800';
             }
-            const softBookedIcon = isSoftBooked ? '<i data-lucide="book-marked" class="w-3.5 h-3.5 ml-1.5 text-gray-500"></i>' : '';
-            return `<span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${styles}">${text}${softBookedIcon}</span>`;
-        };
-
-        const getSkillTag = (level) => {
-            switch (level) {
-                case 'Expert': return 'bg-purple-200 text-purple-800';
-                case 'Advanced': return 'bg-sky-200 text-sky-800';
-                default: return 'bg-gray-200 text-gray-800';
-            }
+            const lookingIcon = lookingForRole ? '<i data-lucide="search" class="w-3.5 h-3.5 ml-1.5 text-gray-500"></i>' : '';
+            return `<span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${styles}">${text}${lookingIcon}</span>`;
         };
 
         const renderResources = (data) => {
@@ -440,12 +442,12 @@
                 const row = document.createElement('tr');
                 row.style.animationDelay = `${index * 50}ms`;
                 const skillsHtml = resource.skills.map(skill => 
-                    `<span class="mr-2 mb-1 px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getSkillTag(skill.level)}">${skill.skill}</span>`
+                    `<span class="mr-2 mb-1 px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-200 text-gray-800">${skill.skill}</span>`
                 ).join('');
 
                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><img class="h-11 w-11 rounded-full" src="https://placehold.co/44x44/0F0F0F/FFFFFF?text=${resource.avatar}" alt="${resource.name}"><div class="ml-4"><div class="text-sm font-semibold text-brand-black flex items-center">${resource.name} ${resource.locked ? '<i data-lucide="lock" class="w-3.5 h-3.5 ml-2 text-gray-400"></i>' : ''}</div><div class="text-sm text-gray-500">ID: ${resource.id}</div></div></div></td>
-                    <td class="px-6 py-4 whitespace-nowrap">${getStatusPill(resource.status, resource.utilizationPercent, resource.softBookedRoles.length > 0)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><img class="h-11 w-11 rounded-full" src="https://placehold.co/44x44/0F0F0F/FFFFFF?text=${resource.avatar}" alt="${resource.name}"><div class="ml-4"><div class="text-sm font-semibold text-brand-black flex items-center">${resource.name} ${resource.locked ? '<i data-lucide="lock" class="w-3.5 h-3.5 ml-2 text-gray-400"></i>' : ''}</div><div class="text-sm text-gray-500">${resource.level} - ID: ${resource.id}</div></div></div></td>
+                    <td class="px-6 py-4 whitespace-nowrap">${getStatusPill(resource.status, resource.utilizationPercent, resource.lookingForRole)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${resource.benchAging !== null ? `${resource.benchAging} days` : '<span class="text-gray-400">-</span>'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${resource.availabilityDate || '<span class="text-green-600 font-medium">Immediate</span>'}</td>
                     <td class="px-6 py-4"><div class="flex flex-wrap">${skillsHtml}</div></td>
@@ -454,7 +456,6 @@
                         <button type="button" class="actions-toggle p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600" data-resource-id="${resource.id}"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
                         <div id="actions-menu-${resource.id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
                             <div class="py-1">
-                                <a href="#" class="soft-book-btn flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-resource-id="${resource.id}"><i data-lucide="book-marked" class="w-4 h-4 mr-3"></i>Soft Book</a>
                                 <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="user" class="w-4 h-4 mr-3"></i>View Profile</a>
                             </div>
                         </div>
@@ -479,28 +480,34 @@
             document.getElementById('partial-resources').textContent = partial;
             document.getElementById('available-resources').textContent = available;
             document.getElementById('avg-bench-age').textContent = avgBenchAge;
-
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if (statusChartInstance) statusChartInstance.destroy();
-            statusChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Fully Utilized', 'Partially Utilized', 'Available'], datasets: [{ data: [utilized, partial, available], backgroundColor: ['#10B981', '#F59E0B', '#3B82F6'], borderColor: '#FFFFFF', borderWidth: 4, hoverOffset: 8 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, padding: 20, color: '#4B5563' } } } } });
         };
 
         const renderActiveFilters = () => {
             activeFiltersContainer.innerHTML = '';
-            const filtersActive = currentFilters.status.length > 0 || currentFilters.location.length > 0 || currentFilters.locked !== 'all';
+            const { status, location, level, skills, locked, availabilityFrom, availabilityTo } = currentFilters;
+            const filtersActive = status.length > 0 || location.length > 0 || level.length > 0 || skills.length > 0 || locked !== 'all' || availabilityFrom || availabilityTo;
 
             if (!filtersActive) return;
 
             let tagsHtml = '<div class="flex items-center flex-wrap gap-2"><span class="text-sm font-semibold">Active Filters:</span>';
             
-            currentFilters.status.forEach(val => {
+            status.forEach(val => {
                 tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Status: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="status" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
             });
-            currentFilters.location.forEach(val => {
+            location.forEach(val => {
                 tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Location: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="location" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
             });
-            if (currentFilters.locked !== 'all') {
-                tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Locked: ${currentFilters.locked}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="locked" data-filter-value="${currentFilters.locked}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+            level.forEach(val => {
+                tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Level: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="level" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+            });
+            skills.forEach(val => {
+                tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Skill: ${val}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="skills" data-filter-value="${val}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+            });
+            if (locked !== 'all') {
+                tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Locked: ${locked}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="locked" data-filter-value="${locked}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
+            }
+            if (availabilityFrom || availabilityTo) {
+                 tagsHtml += `<span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-gray-200 text-gray-800">Available: ${availabilityFrom || 'any'} to ${availabilityTo || 'any'}<button type="button" class="ml-1 -mr-1 p-0.5 inline-flex text-gray-500 hover:text-gray-800" data-filter-type="date"><i data-lucide="x" class="w-3 h-3"></i></button></span>`;
             }
 
             tagsHtml += `<button id="clear-all-filters-btn" class="text-sm font-semibold text-brand-red hover:underline ml-4">Clear All</button></div>`;
@@ -516,10 +523,27 @@
             if (searchTerm) { processedData = processedData.filter(r => r.name.toLowerCase().includes(searchTerm) || r.id.toString().includes(searchTerm) || r.skills.some(s => s.skill.toLowerCase().includes(searchTerm))); }
 
             processedData = processedData.filter(r => {
-                const statusMatch = currentFilters.status.length === 0 || currentFilters.status.includes(r.status);
-                const locationMatch = currentFilters.location.length === 0 || currentFilters.location.includes(r.location);
-                const lockedMatch = currentFilters.locked === 'all' || (currentFilters.locked === 'locked' && r.locked) || (currentFilters.locked === 'unlocked' && !r.locked);
-                return statusMatch && locationMatch && lockedMatch;
+                const { status, location, level, skills, locked, availabilityFrom, availabilityTo } = currentFilters;
+                const statusMatch = status.length === 0 || status.includes(r.status);
+                const locationMatch = location.length === 0 || location.includes(r.location);
+                const levelMatch = level.length === 0 || level.includes(r.level);
+                const lockedMatch = locked === 'all' || (locked === 'locked' && r.locked) || (locked === 'unlocked' && !r.locked);
+                const skillMatch = skills.length === 0 || skills.every(skill => r.skills.some(s => s.skill === skill));
+                
+                let dateMatch = true;
+                if (r.availabilityDate) {
+                    const resourceDate = new Date(r.availabilityDate);
+                    if (availabilityFrom && resourceDate < new Date(availabilityFrom)) {
+                        dateMatch = false;
+                    }
+                    if (availabilityTo && resourceDate > new Date(availabilityTo)) {
+                        dateMatch = false;
+                    }
+                } else if (availabilityFrom || availabilityTo) { 
+                    dateMatch = false;
+                }
+
+                return statusMatch && locationMatch && lockedMatch && levelMatch && skillMatch && dateMatch;
             });
 
             processedData.sort((a, b) => {
@@ -561,9 +585,12 @@
 
         const populateFilters = () => {
             const statuses = [...new Set(resources.map(r => r.status))];
-            const locations = [...new Set(resources.map(r => r.location))];
-            document.getElementById('status-filters').innerHTML = statuses.map(s => `<label class="flex items-center"><input type="checkbox" name="status" value="${s}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${s}</span></label>`).join('');
-            document.getElementById('location-filters').innerHTML = locations.map(l => `<label class="flex items-center"><input type="checkbox" name="location" value="${l}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${l}</span></label>`).join('');
+            const locations = [...new Set(resources.map(r => r.location))].sort();
+            const levels = [...new Set(resources.map(r => r.level))].sort();
+
+            document.getElementById('status-filters').innerHTML = statuses.map(s => `<label class="flex items-center"><input type="checkbox" name="status" value="${s}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-sm text-gray-700">${s}</span></label>`).join('');
+            document.getElementById('location-filters').innerHTML = locations.map(l => `<label class="flex items-center text-sm"><input type="checkbox" name="location" value="${l}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${l}</span></label>`).join('');
+            document.getElementById('level-filters').innerHTML = levels.map(l => `<label class="flex items-center text-sm"><input type="checkbox" name="level" value="${l}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${l}</span></label>`).join('');
         };
 
         const loadSavedFilters = () => {
@@ -582,39 +609,24 @@
             const filterToApply = savedFilters.find(f => f.name === filterName);
             if (!filterToApply) return;
             document.querySelectorAll('#filter-form input[type="checkbox"]').forEach(c => c.checked = false);
+            
             filterToApply.settings.status.forEach(s => { const checkbox = document.querySelector(`#status-filters input[value="${s}"]`); if (checkbox) checkbox.checked = true; });
             filterToApply.settings.location.forEach(l => { const checkbox = document.querySelector(`#location-filters input[value="${l}"]`); if (checkbox) checkbox.checked = true; });
+            filterToApply.settings.level.forEach(l => { const checkbox = document.querySelector(`#level-filters input[value="${l}"]`); if (checkbox) checkbox.checked = true; });
+            currentFilters.skills = filterToApply.settings.skills || [];
+            renderSkillTags();
             document.getElementById('locked-filter').value = filterToApply.settings.locked;
+            document.getElementById('availability-from').value = filterToApply.settings.availabilityFrom;
+            document.getElementById('availability-to').value = filterToApply.settings.availabilityTo;
         };
-
-        saveFilterBtn.addEventListener('click', () => {
-            const name = saveFilterNameInput.value.trim();
-            if (!name) { alert('Please enter a name for the filter.'); return; }
-            if (savedFilters.some(f => f.name === name)) { if (!confirm(`A filter named "${name}" already exists. Do you want to overwrite it?`)) { return; } savedFilters = savedFilters.filter(f => f.name !== name); }
-            const newFilter = { name: name, settings: { status: Array.from(document.querySelectorAll('#status-filters input:checked')).map(n => n.value), location: Array.from(document.querySelectorAll('#location-filters input:checked')).map(n => n.value), locked: document.getElementById('locked-filter').value } };
-            savedFilters.push(newFilter);
-            localStorage.setItem('wfm_savedFilters', JSON.stringify(savedFilters));
-            saveFilterNameInput.value = '';
-            loadSavedFilters();
-            savedFiltersSelect.value = name;
-        });
-        
-        deleteSavedFilterBtn.addEventListener('click', () => {
-            const selectedFilterName = savedFiltersSelect.value;
-            if (!selectedFilterName) { alert('Please select a filter to delete.'); return; }
-            if (confirm(`Are you sure you want to delete the filter "${selectedFilterName}"?`)) {
-                savedFilters = savedFilters.filter(f => f.name !== selectedFilterName);
-                localStorage.setItem('wfm_savedFilters', JSON.stringify(savedFilters));
-                loadSavedFilters();
-            }
-        });
-
-        savedFiltersSelect.addEventListener('change', (e) => { applySavedFilter(e.target.value); });
 
         applyFiltersBtn.addEventListener('click', () => {
             currentFilters.status = Array.from(document.querySelectorAll('#status-filters input:checked')).map(n => n.value);
             currentFilters.location = Array.from(document.querySelectorAll('#location-filters input:checked')).map(n => n.value);
+            currentFilters.level = Array.from(document.querySelectorAll('#level-filters input:checked')).map(n => n.value);
             currentFilters.locked = document.getElementById('locked-filter').value;
+            currentFilters.availabilityFrom = document.getElementById('availability-from').value;
+            currentFilters.availabilityTo = document.getElementById('availability-to').value;
             currentPage = 1;
             applyAllLogic();
             toggleFilterPanel();
@@ -623,6 +635,10 @@
         resetFiltersBtn.addEventListener('click', () => {
             document.querySelectorAll('#filter-form input[type="checkbox"]').forEach(c => c.checked = false);
             document.getElementById('locked-filter').value = 'all';
+            document.getElementById('availability-from').value = '';
+            document.getElementById('availability-to').value = '';
+            currentFilters.skills = [];
+            renderSkillTags();
             savedFiltersSelect.value = '';
         });
 
@@ -658,31 +674,19 @@
             applyAllLogic();
         });
 
-        // --- FILTER CONTROLS LOGIC ---
-        filterPanel.addEventListener('click', (e) => {
-            const target = e.target.closest('button[data-action]');
-            if (!target) return;
-            
-            const action = target.dataset.action;
-            const targetId = target.dataset.target;
-            const checkboxes = document.querySelectorAll(`#${targetId} input[type="checkbox"]`);
-
-            if (action === 'select-all') {
-                checkboxes.forEach(cb => cb.checked = true);
-            } else if (action === 'clear-all') {
-                checkboxes.forEach(cb => cb.checked = false);
-            }
-        });
-
+        // --- REMOVE ACTIVE FILTERS ---
         activeFiltersContainer.addEventListener('click', (e) => {
             const removeBtn = e.target.closest('button');
             if (!removeBtn) return;
 
             if (removeBtn.id === 'clear-all-filters-btn') {
-                currentFilters = { status: [], location: [], locked: 'all' };
+                currentFilters = { status: [], location: [], level:[], skills: [], locked: 'all', availabilityFrom: '', availabilityTo: '' };
             } else {
                 const { filterType, filterValue } = removeBtn.dataset;
-                if (Array.isArray(currentFilters[filterType])) {
+                if(filterType === 'date') {
+                    currentFilters.availabilityFrom = '';
+                    currentFilters.availabilityTo = '';
+                } else if (Array.isArray(currentFilters[filterType])) {
                     currentFilters[filterType] = currentFilters[filterType].filter(val => val !== filterValue);
                 } else {
                     currentFilters[filterType] = 'all';
@@ -692,52 +696,70 @@
             currentPage = 1;
             applyAllLogic();
         });
-
-        // --- SOFT BOOK MODAL & ACTIONS LOGIC ---
-        const showNotification = (message) => {
-            notificationMessage.textContent = message;
-            notificationToast.classList.remove('translate-x-[200%]');
-            setTimeout(() => {
-                notificationToast.classList.add('translate-x-[200%]');
-            }, 3000);
-        };
-
-        const openSoftBookModal = (resource) => {
-            resourceToBookId = resource.id;
-            softBookResourceName.textContent = `Resource: ${resource.name}`;
+        
+        // --- SKILL FILTER LOGIC ---
+        const renderSkillTags = () => {
+            const existingTags = skillTagsContainer.querySelectorAll('.skill-tag');
+            existingTags.forEach(tag => tag.remove());
             
-            if (resource.softBookedRoles.length > 0) {
-                softBookWarning.textContent = `Warning: This resource is already soft booked to ${resource.softBookedRoles.join(', ')}.`;
-                softBookWarning.classList.remove('hidden');
-            } else {
-                softBookWarning.classList.add('hidden');
+            currentFilters.skills.forEach(skill => {
+                const tag = document.createElement('span');
+                tag.className = 'skill-tag flex items-center gap-x-1.5 py-1 px-2.5 rounded-md text-sm font-medium';
+                tag.innerHTML = `<span>${skill}</span><button type="button" class="p-0.5" data-skill="${skill}"><i data-lucide="x" class="w-3.5 h-3.5 pointer-events-none"></i></button>`;
+                skillTagsContainer.prepend(tag);
+            });
+            lucide.createIcons();
+        };
+
+        skillSearchInput.addEventListener('keyup', () => {
+            const searchTerm = skillSearchInput.value.toLowerCase();
+            if (searchTerm.length < 1) {
+                skillSuggestions.classList.add('hidden');
+                return;
             }
-
-            roleSelect.innerHTML = availableRoles.map(role => `<option value="${role}">${role}</option>`).join('');
-            softBookModal.classList.remove('hidden');
-            softBookModal.classList.add('flex');
-        };
-
-        const closeSoftBookModal = () => {
-            softBookModal.classList.add('hidden');
-            softBookModal.classList.remove('flex');
-            resourceToBookId = null;
-        };
-
-        confirmSoftBookBtn.addEventListener('click', () => {
-            if (resourceToBookId) {
-                const resource = resources.find(r => r.id === resourceToBookId);
-                const selectedRole = roleSelect.value;
-                if (resource && !resource.softBookedRoles.includes(selectedRole)) {
-                    resource.softBookedRoles.push(selectedRole);
-                }
-                showNotification(`${resource.name} has been soft booked to ${selectedRole}.`);
-                applyAllLogic();
-                closeSoftBookModal();
+            const filteredSkills = allSkills.filter(skill => 
+                skill.toLowerCase().includes(searchTerm) && !currentFilters.skills.includes(skill)
+            );
+            
+            if(filteredSkills.length > 0) {
+                skillSuggestions.innerHTML = filteredSkills.map(skill => 
+                    `<div class="p-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100" data-skill="${skill}">${skill}</div>`
+                ).join('');
+                skillSuggestions.classList.remove('hidden');
+            } else {
+                skillSuggestions.classList.add('hidden');
             }
         });
 
-        cancelSoftBookBtn.addEventListener('click', closeSoftBookModal);
+        skillSuggestions.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-skill]');
+            if(target) {
+                const skill = target.dataset.skill;
+                if(!currentFilters.skills.includes(skill)) {
+                    currentFilters.skills.push(skill);
+                    renderSkillTags();
+                }
+                skillSearchInput.value = '';
+                skillSuggestions.classList.add('hidden');
+                skillSearchInput.focus();
+            }
+        });
+        
+        skillTagsContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('button[data-skill]');
+            if(target) {
+                const skillToRemove = target.dataset.skill;
+                currentFilters.skills = currentFilters.skills.filter(s => s !== skillToRemove);
+                renderSkillTags();
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!skillSearchInput.contains(e.target) && !skillSuggestions.contains(e.target)) {
+                skillSuggestions.classList.add('hidden');
+            }
+        });
+
 
         // --- EVENT DELEGATION for dynamic elements ---
         document.body.addEventListener('click', (e) => {
@@ -753,17 +775,6 @@
                 const resourceId = parseInt(actionsToggle.dataset.resourceId, 10);
                 const menu = document.getElementById(`actions-menu-${resourceId}`);
                 menu.classList.toggle('hidden');
-            }
-
-            // Soft book button click
-            const softBookBtn = e.target.closest('.soft-book-btn');
-            if (softBookBtn) {
-                e.preventDefault();
-                const resourceId = parseInt(softBookBtn.dataset.resourceId, 10);
-                const resource = resources.find(r => r.id === resourceId);
-                if (resource) {
-                    openSoftBookModal(resource);
-                }
             }
         });
 
@@ -807,6 +818,58 @@
                     parentMenu.querySelector('button').click();
                 }
             }
+
+            saveFilterBtn.addEventListener('click', () => {
+                const name = saveFilterNameInput.value.trim();
+                if (!name) return;
+                
+                savedFilters = savedFilters.filter(f => f.name !== name); 
+                
+                const newFilter = { 
+                    name: name, 
+                    settings: { 
+                        status: Array.from(document.querySelectorAll('#status-filters input:checked')).map(n => n.value), 
+                        location: Array.from(document.querySelectorAll('#location-filters input:checked')).map(n => n.value),
+                        level: Array.from(document.querySelectorAll('#level-filters input:checked')).map(n => n.value),
+                        skills: currentFilters.skills,
+                        locked: document.getElementById('locked-filter').value,
+                        availabilityFrom: document.getElementById('availability-from').value,
+                        availabilityTo: document.getElementById('availability-to').value
+                    } 
+                };
+                savedFilters.push(newFilter);
+                localStorage.setItem('wfm_savedFilters', JSON.stringify(savedFilters));
+                saveFilterNameInput.value = '';
+                loadSavedFilters();
+                savedFiltersSelect.value = name;
+            });
+
+            deleteSavedFilterBtn.addEventListener('click', () => {
+                const selectedFilterName = savedFiltersSelect.value;
+                if (!selectedFilterName) return;
+                savedFilters = savedFilters.filter(f => f.name !== selectedFilterName);
+                localStorage.setItem('wfm_savedFilters', JSON.stringify(savedFilters));
+                loadSavedFilters();
+            });
+
+            savedFiltersSelect.addEventListener('change', (e) => { 
+                applySavedFilter(e.target.value); 
+            });
+
+            filterPanel.addEventListener('click', (e) => {
+                const target = e.target.closest('button[data-action]');
+                if (!target) return;
+                
+                const action = target.dataset.action;
+                const targetId = target.dataset.target;
+                const checkboxes = document.querySelectorAll(`#${targetId} input[type="checkbox"]`);
+
+                if (action === 'select-all') {
+                    checkboxes.forEach(cb => cb.checked = true);
+                } else if (action === 'clear-all') {
+                    checkboxes.forEach(cb => cb.checked = false);
+                }
+            });
         });
     </script>
 </body>
