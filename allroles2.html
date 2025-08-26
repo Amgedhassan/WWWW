@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roles Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Vodafone', sans-serif;
+            background-color: #F0F2F5;
+            color: #0F0F0F;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* --- Aurora Background --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5; z-index: -1;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; filter: blur(100px); opacity: 0.3;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff8a00, transparent 60%);
+            width: 400px; height: 400px; top: -100px; left: -150px;
+            animation: move-aurora-1 15s infinite alternate;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #e60000, transparent 60%);
+            width: 500px; height: 500px; bottom: -150px; right: -200px;
+            animation: move-aurora-2 12s infinite alternate;
+        }
+        @keyframes move-aurora-1 { to { transform: translate(100px, 50px); } }
+        @keyframes move-aurora-2 { to { transform: translate(-80px, -40px); } }
+
+        /* --- Glassmorphism Effect for Main Content --- */
+        .glassmorphic {
+            background: rgba(255, 255, 255, 0.5);
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* --- Animations & Transitions --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #roles-list tr { opacity: 0; animation: fadeIn 0.5s ease-out forwards; }
+        .transition-all-fast { transition: all 0.2s ease-in-out; }
+        #filter-panel { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
+        #filter-panel.open { transform: translateX(0); }
+        #filter-overlay, #sidebar-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+        #filter-overlay.open, #sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* --- BRANDED Sidebar Enhancements --- */
+        .sidebar { background-color: #0F0F0F; }
+        .sidebar-item { position: relative; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .parent-active > button { color: #FFFFFF; }
+        .parent-active { position: relative; }
+        .parent-active::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: #e60000; border-top-right-radius: 4px; border-bottom-right-radius: 4px;
+        }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .sidebar-submenu-container { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-in-out; }
+        .sidebar-submenu-container.open { grid-template-rows: 1fr; }
+        .sidebar-submenu { overflow: hidden; }
+        
+        /* --- Table Sorting --- */
+        .sortable-header { cursor: pointer; }
+        .sortable-header:hover { color: #0F0F0F; }
+        
+        /* --- Custom Scrollbar --- */
+        main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        main::-webkit-scrollbar-thumb:hover, .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #374151; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+        /* --- Brand Color Utilities --- */
+        .text-brand-red { color: #e60000; }
+        .bg-brand-red { background-color: #e60000; }
+        .ring-brand-red { --tw-ring-color: #e60000; }
+        .text-brand-black { color: #0F0F0F; }
+        
+    </style>
+</head>
+<body class="text-brand-black">
+    <div class="aurora-background"></div>
+
+    <div class="flex h-screen">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 md:hidden"></div>
+
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-40 -translate-x-full md:relative md:translate-x-0">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+                <button id="close-sidebar-btn" class="p-2 md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-grow overflow-y-auto sidebar-scroll">
+                <ul class="px-4 py-4 space-y-1">
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Home/Dashboard</a></li>
+                    <li id="resource-management-menu" class="sidebar-item rounded-lg">
+                        <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all-fast">
+                            <span class="flex items-center"><i data-lucide="users-2" class="w-5 h-5 mr-3"></i>Resource Management</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">Bench Management</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg">All Resources</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">Resource Directory</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">New Deployments</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li id="planning-menu" class="sidebar-item rounded-lg parent-active">
+                        <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all-fast">
+                            <span class="flex items-center"><i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>Resource planning and allocation</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link sub-active flex items-center py-2 px-4 text-sm rounded-lg">Real time demand tracking</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="trending-up" class="w-5 h-5 mr-3"></i>Demand & Opportunity</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="award" class="w-5 h-5 mr-3"></i>Skills & Development</a></li>
+                </ul>
+            </div>
+            <div class="p-4 border-t border-gray-700">
+                 <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
+                     <img src="https://placehold.co/40x40/e60000/FFFFFF?text=P" alt="Admin Avatar" class="w-10 h-10 rounded-full">
+                     <div class="ml-3">
+                         <p class="font-semibold text-white">Project Manager</p>
+                         <p class="text-xs text-gray-500">pm@workforce.io</p>
+                     </div>
+                 </a>
+            </div>
+        </nav>
+
+        <!-- Main Content Wrapper -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10">
+                <div class="flex items-center">
+                    <button id="menu-btn" class="p-2 md:hidden mr-3"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-brand-black">Real time demand tracking</h2>
+                         <nav aria-label="Breadcrumb" class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
+                            <ol class="list-none p-0 inline-flex">
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Home</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Resource planning and allocation</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li aria-current="page"><a href="#" class="text-brand-black font-medium">Real time demand tracking</a></li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+                 <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="relative hidden sm:block"><i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i><input type="text" id="searchInput" placeholder="Search roles..." class="w-40 md:w-56 lg:w-64 bg-white/50 border border-transparent text-brand-black rounded-full py-2.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red transition-all-fast"></div>
+                    <button id="filter-toggle-btn" class="flex items-center justify-center h-11 px-3 sm:px-5 bg-white/60 border border-gray-300/50 text-brand-black rounded-lg hover:bg-white/80 transition-all-fast"><i data-lucide="sliders-horizontal" class="w-5 h-5"></i></button>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
+                <!-- Table Container -->
+                <div class="card overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table id="roles-table" class="min-w-full">
+                            <thead id="table-header" class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"></th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Booking Type</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="roleId">Role ID <i data-lucide="arrow-up-down" class="inline-block w-3.5 h-3.5 ml-1 opacity-30"></i></th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Project ID</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">BC ID</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Allocation</th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="startDate">Start Date <i data-lucide="arrow-up-down" class="inline-block w-3.5 h-3.5 ml-1 opacity-30"></i></th>
+                                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="endDate">End Date <i data-lucide="arrow-up-down" class="inline-block w-3.5 h-3.5 ml-1 opacity-30"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="roles-list" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                     <div class="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 gap-4">
+                         <div class="flex items-center space-x-2">
+                             <label for="rows-per-page" class="text-sm text-gray-600">Rows per page:</label>
+                             <select id="rows-per-page" class="rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                                 <option value="8">8</option>
+                                 <option value="20">20</option>
+                                 <option value="50">50</option>
+                             </select>
+                         </div>
+                         <p class="text-sm text-gray-600" id="pagination-info">Showing 0 to 0 of 0 results</p>
+                         <div class="flex items-center space-x-2">
+                             <button id="prev-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                             <span id="page-number" class="text-sm font-medium">Page 1</span>
+                             <button id="next-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                         </div>
+                     </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Filter Panel -->
+    <div id="filter-overlay" class="fixed inset-0 z-30"></div>
+    <aside id="filter-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-40 p-8 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="filter-heading">
+        <div class="flex items-center justify-between">
+            <h2 id="filter-heading" class="text-xl font-bold">Filter Roles</h2>
+            <button id="close-filter-btn" class="p-1 rounded-full hover:bg-gray-100" aria-label="Close filter panel"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div>
+            <label for="saved-filters-select" class="text-sm font-semibold text-gray-600">Use a Saved Filter</label>
+            <div class="flex items-center space-x-2 mt-2">
+                <select id="saved-filters-select" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm"><option value="">Select a filter...</option></select>
+                <button id="delete-saved-filter-btn" class="p-2 text-gray-400 hover:text-brand-red" aria-label="Delete selected filter"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            </div>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div class="flex-grow space-y-6 overflow-y-auto pr-2">
+            <fieldset>
+                <legend class="text-sm font-semibold text-gray-600">Booking Type</legend>
+                <div class="mt-2 space-y-2" id="booking-type-filters"></div>
+            </fieldset>
+            <div>
+                <label class="text-sm font-semibold text-gray-600">Start Date</label>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="start-date-from" class="text-xs text-gray-500">From</label>
+                        <input type="date" id="start-date-from" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="start-date-to" class="text-xs text-gray-500">To</label>
+                        <input type="date" id="start-date-to" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-600">End Date</label>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="end-date-from" class="text-xs text-gray-500">From</label>
+                        <input type="date" id="end-date-from" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="end-date-to" class="text-xs text-gray-500">To</label>
+                        <input type="date" id="end-date-to" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-600">Allocation %</label>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <input type="number" id="allocation-min" placeholder="Min" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                    <div>
+                        <input type="number" id="allocation-max" placeholder="Max" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div class="space-y-2">
+            <label for="save-filter-name" class="text-sm font-semibold text-gray-600">Save Current Filter</label>
+            <div class="flex items-center space-x-2">
+                <input type="text" id="save-filter-name" placeholder="e.g., Soft Booked Roles" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-red focus:ring-brand-red sm:text-sm">
+                <button id="save-filter-btn" class="h-10 px-4 bg-brand-black text-white rounded-lg font-semibold text-sm hover:bg-gray-800 transition-all-fast">Save</button>
+            </div>
+        </div>
+        <div class="flex-shrink-0 flex items-center space-x-4 mt-8">
+            <button id="reset-filters-btn" class="flex-1 h-11 px-5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all-fast">Reset</button>
+            <button id="apply-filters-btn" class="flex-1 h-11 px-5 bg-brand-red text-white rounded-lg font-semibold hover:bg-red-700 transition-all-fast">Apply Filters</button>
+        </div>
+    </aside>
+
+    <script>
+        // --- DATA GENERATION ---
+        const generateRoles = (count) => {
+            const statuses = ['Soft Booked', 'Hard Booked'];
+            const generated = [];
+
+            for (let i = 0; i < count; i++) {
+                const startDate = new Date(2025, 9, 1 + Math.floor(Math.random() * 10));
+                const endDate = new Date(2025, 11, 25 + Math.floor(Math.random() * 5));
+                
+                generated.push({
+                    roleId: 27874 + i,
+                    projectId: `PRG-9622400`,
+                    businessCaseId: `ki-8y5556`,
+                    bookingType: statuses[i % 2],
+                    allocation: 50 + Math.floor(Math.random() * 51),
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0],
+                });
+            }
+            return generated;
+        };
+
+        const allRoles = generateRoles(50);
+
+        // --- STATE MANAGEMENT ---
+        let currentPage = 1;
+        let rowsPerPage = 8;
+        let currentSort = { key: 'startDate', direction: 'asc' };
+        let currentFilters = {
+            bookingType: [],
+            startDateFrom: '',
+            startDateTo: '',
+            endDateFrom: '',
+            endDateTo: '',
+            allocationMin: '',
+            allocationMax: ''
+        };
+        let savedFilters = [];
+
+        // --- DOM ELEMENTS ---
+        const rolesList = document.getElementById('roles-list');
+        const searchInput = document.getElementById('searchInput');
+        const tableHeader = document.getElementById('table-header');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const paginationInfo = document.getElementById('pagination-info');
+        const pageNumber = document.getElementById('page-number');
+        const rowsPerPageSelect = document.getElementById('rows-per-page');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const filterPanel = document.getElementById('filter-panel');
+        const filterOverlay = document.getElementById('filter-overlay');
+        const filterToggleBtn = document.getElementById('filter-toggle-btn');
+        const closeFilterBtn = document.getElementById('close-filter-btn');
+        const applyFiltersBtn = document.getElementById('apply-filters-btn');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
+        const saveFilterBtn = document.getElementById('save-filter-btn');
+        const saveFilterNameInput = document.getElementById('save-filter-name');
+        const savedFiltersSelect = document.getElementById('saved-filters-select');
+        const deleteSavedFilterBtn = document.getElementById('delete-saved-filter-btn');
+
+        // --- RENDER FUNCTIONS ---
+        const getStatusPill = (status) => {
+            let styles = '';
+            switch (status) {
+                case 'Soft Booked':
+                    styles = 'bg-blue-100 text-blue-800'; break;
+                case 'Hard Booked':
+                    styles = 'bg-green-100 text-green-800'; break;
+                default:
+                    styles = 'bg-gray-100 text-gray-800';
+            }
+            return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${styles}">${status}</span>`;
+        };
+
+        const renderRoles = (data) => {
+            rolesList.innerHTML = '';
+            if (data.length === 0) {
+                rolesList.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-gray-500">No roles match the current criteria.</td></tr>`;
+                return;
+            }
+            data.forEach((role, index) => {
+                const row = document.createElement('tr');
+                row.style.animationDelay = `${index * 50}ms`;
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="checkbox" class="row-checkbox h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">${getStatusPill(role.bookingType)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${role.roleId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.projectId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.businessCaseId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.allocation}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.startDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.endDate}</td>
+                `;
+                rolesList.appendChild(row);
+            });
+            lucide.createIcons();
+        };
+        
+        // --- LOGIC FUNCTIONS (Filter, Sort, Search, Paginate) ---
+        const applyAllLogic = () => {
+            let processedData = [...allRoles];
+            const searchTerm = searchInput.value.toLowerCase();
+
+            if (searchTerm) {
+                processedData = processedData.filter(r => 
+                    r.roleId.toString().includes(searchTerm) ||
+                    r.projectId.toLowerCase().includes(searchTerm) ||
+                    r.businessCaseId.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            processedData = processedData.filter(r => {
+                const { bookingType, startDateFrom, startDateTo, endDateFrom, endDateTo, allocationMin, allocationMax } = currentFilters;
+                const typeMatch = bookingType.length === 0 || bookingType.includes(r.bookingType);
+                
+                let startDateMatch = true;
+                const roleStartDate = new Date(r.startDate);
+                if (startDateFrom && roleStartDate < new Date(startDateFrom)) startDateMatch = false;
+                if (startDateTo && roleStartDate > new Date(startDateTo)) startDateMatch = false;
+
+                let endDateMatch = true;
+                const roleEndDate = new Date(r.endDate);
+                if (endDateFrom && roleEndDate < new Date(endDateFrom)) endDateMatch = false;
+                if (endDateTo && roleEndDate > new Date(endDateTo)) endDateMatch = false;
+
+                let allocationMatch = true;
+                if (allocationMin && r.allocation < allocationMin) allocationMatch = false;
+                if (allocationMax && r.allocation > allocationMax) allocationMatch = false;
+                
+                return typeMatch && startDateMatch && endDateMatch && allocationMatch;
+            });
+            
+            processedData.sort((a, b) => {
+                const key = currentSort.key;
+                let valA = a[key], valB = b[key];
+                if (key.includes('Date')) { valA = new Date(valA); valB = new Date(valB); }
+
+                let comparison = 0;
+                if (valA < valB) comparison = -1;
+                if (valA > valB) comparison = 1;
+                
+                return currentSort.direction === 'asc' ? comparison : -comparison;
+            });
+
+            const totalItems = processedData.length;
+            const paginatedData = processedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+            renderRoles(paginatedData);
+            updatePaginationUI(totalItems);
+        };
+        
+        const updatePaginationUI = (totalItems) => {
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            const startItem = totalItems === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+            const endItem = Math.min(currentPage * rowsPerPage, totalItems);
+
+            paginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${totalItems} results`;
+            pageNumber.textContent = `Page ${currentPage} of ${totalPages > 0 ? totalPages : 1}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        };
+
+        // --- FILTER PANEL LOGIC ---
+        const toggleFilterPanel = () => {
+            filterPanel.classList.toggle('open');
+            filterOverlay.classList.toggle('open');
+        };
+
+        const populateFilters = () => {
+            const bookingTypes = [...new Set(allRoles.map(r => r.bookingType))];
+            document.getElementById('booking-type-filters').innerHTML = bookingTypes.map(s => `<label class="flex items-center"><input type="checkbox" name="bookingType" value="${s}" class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red"> <span class="ml-2 text-gray-700">${s}</span></label>`).join('');
+        };
+        
+        const loadSavedFilters = () => {
+            const filtersFromStorage = localStorage.getItem('wfm_roles_savedFilters');
+            savedFilters = filtersFromStorage ? JSON.parse(filtersFromStorage) : [];
+            savedFiltersSelect.innerHTML = '<option value="">Select a filter...</option>';
+            savedFilters.forEach(filter => {
+                const option = document.createElement('option');
+                option.value = filter.name;
+                option.textContent = filter.name;
+                savedFiltersSelect.appendChild(option);
+            });
+        };
+
+        const applySavedFilter = (filterName) => {
+            const filterToApply = savedFilters.find(f => f.name === filterName);
+            if (!filterToApply) return;
+            document.querySelectorAll('#booking-type-filters input[type="checkbox"]').forEach(c => c.checked = false);
+            
+            filterToApply.settings.bookingType.forEach(s => { const checkbox = document.querySelector(`#booking-type-filters input[value="${s}"]`); if (checkbox) checkbox.checked = true; });
+            document.getElementById('start-date-from').value = filterToApply.settings.startDateFrom;
+            document.getElementById('start-date-to').value = filterToApply.settings.startDateTo;
+            document.getElementById('end-date-from').value = filterToApply.settings.endDateFrom;
+            document.getElementById('end-date-to').value = filterToApply.settings.endDateTo;
+            document.getElementById('allocation-min').value = filterToApply.settings.allocationMin;
+            document.getElementById('allocation-max').value = filterToApply.settings.allocationMax;
+        };
+
+
+        applyFiltersBtn.addEventListener('click', () => {
+            currentFilters.bookingType = Array.from(document.querySelectorAll('#booking-type-filters input:checked')).map(n => n.value);
+            currentFilters.startDateFrom = document.getElementById('start-date-from').value;
+            currentFilters.startDateTo = document.getElementById('start-date-to').value;
+            currentFilters.endDateFrom = document.getElementById('end-date-from').value;
+            currentFilters.endDateTo = document.getElementById('end-date-to').value;
+            currentFilters.allocationMin = document.getElementById('allocation-min').value;
+            currentFilters.allocationMax = document.getElementById('allocation-max').value;
+            currentPage = 1;
+            applyAllLogic();
+            toggleFilterPanel();
+        });
+
+        resetFiltersBtn.addEventListener('click', () => {
+            document.querySelectorAll('#booking-type-filters input:checked').forEach(c => c.checked = false);
+            document.getElementById('start-date-from').value = '';
+            document.getElementById('start-date-to').value = '';
+            document.getElementById('end-date-from').value = '';
+            document.getElementById('end-date-to').value = '';
+            document.getElementById('allocation-min').value = '';
+            document.getElementById('allocation-max').value = '';
+            savedFiltersSelect.value = '';
+        });
+
+        // --- SORTING LOGIC ---
+        const updateSortUI = () => {
+            tableHeader.querySelectorAll('.sortable-header').forEach(header => {
+                const icon = header.querySelector('i');
+                if (header.dataset.sortKey === currentSort.key) {
+                    icon.outerHTML = currentSort.direction === 'asc' ? `<i data-lucide="arrow-up" class="inline-block w-3.5 h-3.5 ml-1"></i>` : `<i data-lucide="arrow-down" class="inline-block w-3.5 h-3.5 ml-1"></i>`;
+                } else {
+                    icon.outerHTML = `<i data-lucide="arrow-up-down" class="inline-block w-3.5 h-3.5 ml-1 opacity-30"></i>`;
+                }
+            });
+            lucide.createIcons();
+        };
+
+        tableHeader.addEventListener('click', (e) => {
+            const header = e.target.closest('.sortable-header');
+            if (!header) return;
+            const sortKey = header.dataset.sortKey;
+            if (currentSort.key === sortKey) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.key = sortKey;
+                currentSort.direction = 'asc';
+            }
+            currentPage = 1;
+            updateSortUI();
+            applyAllLogic();
+        });
+        
+        // --- PAGINATION LOGIC ---
+        prevPageBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; applyAllLogic(); } });
+        nextPageBtn.addEventListener('click', () => { currentPage++; applyAllLogic(); });
+        rowsPerPageSelect.addEventListener('change', (e) => {
+            rowsPerPage = parseInt(e.target.value, 10);
+            currentPage = 1;
+            applyAllLogic();
+        });
+        
+        // --- CHECKBOX LOGIC ---
+        rolesList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('row-checkbox')) {
+                const allChecked = [...document.querySelectorAll('.row-checkbox')].every(c => c.checked);
+                document.getElementById('select-all-checkbox').checked = allChecked;
+            }
+        });
+
+        document.getElementById('select-all-checkbox').addEventListener('change', (e) => {
+            document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateFilters();
+            loadSavedFilters();
+            updateSortUI();
+            applyAllLogic();
+            lucide.createIcons();
+            
+            searchInput.addEventListener('input', () => { currentPage = 1; applyAllLogic(); });
+            
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('open');
+            };
+
+            menuBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+            
+            filterToggleBtn.addEventListener('click', toggleFilterPanel);
+            closeFilterBtn.addEventListener('click', toggleFilterPanel);
+            filterOverlay.addEventListener('click', toggleFilterPanel);
+
+            document.querySelectorAll('.sidebar-item > button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const parent = button.parentElement;
+                    const submenuContainer = parent.querySelector('.sidebar-submenu-container');
+                    const icon = button.querySelector('[data-lucide="chevron-down"]');
+                    if (submenuContainer) {
+                        submenuContainer.classList.toggle('open');
+                        icon.classList.toggle('rotate-180');
+                    }
+                });
+            });
+            
+            const activeSubmenuLink = document.querySelector('.nav-link.sub-active');
+            if (activeSubmenuLink) {
+                const parentMenu = activeSubmenuLink.closest('.sidebar-item');
+                if (parentMenu) {
+                    parentMenu.querySelector('button')?.click();
+                }
+            }
+            
+            saveFilterBtn.addEventListener('click', () => {
+                const name = saveFilterNameInput.value.trim();
+                if (!name) return;
+                
+                savedFilters = savedFilters.filter(f => f.name !== name); 
+                
+                const newFilter = { 
+                    name: name, 
+                    settings: { 
+                        bookingType: Array.from(document.querySelectorAll('#booking-type-filters input:checked')).map(n => n.value), 
+                        startDateFrom: document.getElementById('start-date-from').value,
+                        startDateTo: document.getElementById('start-date-to').value,
+                        endDateFrom: document.getElementById('end-date-from').value,
+                        endDateTo: document.getElementById('end-date-to').value,
+                        allocationMin: document.getElementById('allocation-min').value,
+                        allocationMax: document.getElementById('allocation-max').value
+                    } 
+                };
+                savedFilters.push(newFilter);
+                localStorage.setItem('wfm_roles_savedFilters', JSON.stringify(savedFilters));
+                saveFilterNameInput.value = '';
+                loadSavedFilters();
+                savedFiltersSelect.value = name;
+            });
+
+            deleteSavedFilterBtn.addEventListener('click', () => {
+                const selectedFilterName = savedFiltersSelect.value;
+                if (!selectedFilterName) return;
+                savedFilters = savedFilters.filter(f => f.name !== selectedFilterName);
+                localStorage.setItem('wfm_roles_savedFilters', JSON.stringify(savedFilters));
+                loadSavedFilters();
+            });
+
+            savedFiltersSelect.addEventListener('change', (e) => { 
+                applySavedFilter(e.target.value); 
+            });
+        });
+    </script>
+</body>
+</html>
