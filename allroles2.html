@@ -200,6 +200,7 @@
                                     <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Allocation</th>
                                     <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="startDate">Start Date <i data-lucide="arrow-up-down" class="inline-block w-3.5 h-3.5 ml-1 opacity-30"></i></th>
                                     <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" data-sort-key="endDate">End Date <i data-lucide="arrow-up-down" class="inline-block w-3.5 h-3.5 ml-1 opacity-30"></i></th>
+                                    <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
                                 </tr>
                             </thead>
                             <tbody id="roles-list" class="divide-y divide-gray-200"></tbody>
@@ -380,7 +381,7 @@
         const renderRoles = (data) => {
             rolesList.innerHTML = '';
             if (data.length === 0) {
-                rolesList.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-gray-500">No roles match the current criteria.</td></tr>`;
+                rolesList.innerHTML = `<tr><td colspan="9" class="text-center py-12 text-gray-500">No roles match the current criteria.</td></tr>`;
                 return;
             }
             data.forEach((role, index) => {
@@ -396,6 +397,18 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.allocation}%</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.startDate}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.endDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button type="button" class="actions-toggle p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600" data-role-id="${role.roleId}">
+                            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                        <div id="actions-menu-${role.roleId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
+                            <div class="py-1">
+                                <a href="#" class="view-details-btn flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-role-id="${role.roleId}">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-3"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </td>
                 `;
                 rolesList.appendChild(row);
             });
@@ -577,6 +590,22 @@
             document.querySelectorAll('.row-checkbox').forEach(checkbox => {
                 checkbox.checked = e.target.checked;
             });
+        });
+
+        // --- EVENT DELEGATION ---
+        document.body.addEventListener('click', (e) => {
+            const actionsToggle = e.target.closest('.actions-toggle');
+            document.querySelectorAll('[id^="actions-menu-"]').forEach(menu => {
+                if (!actionsToggle || menu.id !== `actions-menu-${actionsToggle.dataset.roleId}`) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            if (actionsToggle) {
+                const roleId = parseInt(actionsToggle.dataset.roleId, 10);
+                const menu = document.getElementById(`actions-menu-${roleId}`);
+                menu.classList.toggle('hidden');
+            }
         });
 
         // --- INITIALIZATION & EVENT LISTENERS ---
