@@ -53,14 +53,18 @@
         
         .sidebar { background-color: #0F0F0F; }
         .sidebar-item { position: relative; }
-        .sidebar-item > a { color: #9CA3AF; font-weight: 500; }
-        .sidebar-item:hover > a { color: #FFFFFF; background-color: #1F2937; }
-        .parent-active > a { color: #FFFFFF; font-weight: 600; background-color: #1F2937; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .parent-active > button { color: #FFFFFF; }
         .parent-active { position: relative; }
         .parent-active::before {
             content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
             background: #e60000; border-top-right-radius: 4px; border-bottom-right-radius: 4px;
         }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .sidebar-submenu-container { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-in-out; }
+        .sidebar-submenu-container.open { grid-template-rows: 1fr; }
+        .sidebar-submenu { overflow: hidden; }
         
         main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar { width: 6px; }
         main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -94,8 +98,28 @@
             <div class="flex-grow overflow-y-auto sidebar-scroll">
                 <ul class="px-4 py-4 space-y-1">
                     <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Dashboard</a></li>
-                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="users" class="w-5 h-5 mr-3"></i>Resources</a></li>
-                    <li class="sidebar-item parent-active"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>Roles</a></li>
+                    <li class="sidebar-item rounded-lg">
+                        <button class="submenu-toggle w-full flex items-center justify-between px-4 py-3 rounded-lg">
+                            <span class="flex items-center"><i data-lucide="users" class="w-5 h-5 mr-3"></i>Resource Management</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg">All Resources</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="sidebar-item parent-active rounded-lg">
+                        <button class="submenu-toggle w-full flex items-center justify-between px-4 py-3 rounded-lg">
+                            <span class="flex items-center"><i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>Resource planning</a>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform rotate-180"></i>
+                        </button>
+                        <div class="sidebar-submenu-container open">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link sub-active flex items-center py-2 px-4 text-sm rounded-lg">Real time demand tracking</a>
+                            </div>
+                        </div>
+                    </li>
                     <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="file-text" class="w-5 h-5 mr-3"></i>Business Cases</a></li>
                     <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="settings" class="w-5 h-5 mr-3"></i>Integrations</a></li>
                     <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i>Reports</a></li>
@@ -110,7 +134,8 @@
                 <nav aria-label="Breadcrumb" class="text-xs sm:text-sm text-gray-500 hidden sm:block">
                     <ol class="list-none p-0 inline-flex items-center">
                       <li class="flex items-center"><a href="#" class="hover:text-brand-red">Dashboard</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
-                      <li class="flex items-center"><a href="#" class="hover:text-brand-red">Roles</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                      <li class="flex items-center"><a href="#" class="hover:text-brand-red">Resource planning</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                      <li class="flex items-center"><a href="#" class="hover:text-brand-red">Real time demand tracking</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
                       <li aria-current="page"><a href="#" class="text-brand-black font-medium">Role Details</a></li>
                     </ol>
                 </nav>
@@ -128,7 +153,6 @@
                         </button>
                         <div id="action-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-20 ring-1 ring-black ring-opacity-5">
                             <div class="py-1">
-                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="edit-3" class="w-4 h-4 mr-3"></i>Edit Role</a>
                                 <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="flag" class="w-4 h-4 mr-3"></i>Flag for external contractor</a>
                             </div>
                         </div>
@@ -230,23 +254,23 @@
                                     <!-- Candidate Card -->
                                     <div class="border rounded-lg p-4 flex items-center justify-between">
                                         <div class="flex items-center">
-                                            <img src="https://placehold.co/48x48/0F0F0F/FFFFFF?text=J" alt="Avatar" class="w-12 h-12 rounded-full">
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-lg text-gray-600">JD</div>
                                             <div class="ml-4">
                                                 <p class="font-semibold">John Doe</p>
                                                 <p class="text-sm text-gray-500">L5 - ID: 12345</p>
                                             </div>
                                         </div>
-                                        <button class="text-sm font-semibold text-brand-red hover:underline">View Profile</button>
+                                        <a href="#" class="text-sm font-semibold text-brand-red hover:underline flex items-center">View Profile <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i></a>
                                     </div>
                                     <div class="border rounded-lg p-4 flex items-center justify-between">
                                         <div class="flex items-center">
-                                            <img src="https://placehold.co/48x48/0F0F0F/FFFFFF?text=A" alt="Avatar" class="w-12 h-12 rounded-full">
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-lg text-gray-600">AS</div>
                                             <div class="ml-4">
                                                 <p class="font-semibold">Anna Smith</p>
                                                 <p class="text-sm text-gray-500">L6 - ID: 54321</p>
                                             </div>
                                         </div>
-                                        <button class="text-sm font-semibold text-brand-red hover:underline">View Profile</button>
+                                        <a href="#" class="text-sm font-semibold text-brand-red hover:underline flex items-center">View Profile <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i></a>
                                     </div>
                                 </div>
                             </div>
@@ -255,33 +279,33 @@
                                     <!-- Candidate Card -->
                                     <div class="border rounded-lg p-4 flex items-center justify-between">
                                         <div class="flex items-center">
-                                            <img src="https://placehold.co/48x48/0F0F0F/FFFFFF?text=M" alt="Avatar" class="w-12 h-12 rounded-full">
+                                           <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-lg text-gray-600">MJ</div>
                                             <div class="ml-4">
                                                 <p class="font-semibold">Mary Johnson</p>
                                                 <p class="text-sm text-gray-500">L5 - ID: 67890</p>
                                             </div>
                                         </div>
-                                        <button class="text-sm font-semibold text-brand-red hover:underline">View Profile</button>
+                                        <a href="#" class="text-sm font-semibold text-brand-red hover:underline flex items-center">View Profile <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i></a>
                                     </div>
                                      <div class="border rounded-lg p-4 flex items-center justify-between">
                                         <div class="flex items-center">
-                                            <img src="https://placehold.co/48x48/0F0F0F/FFFFFF?text=P" alt="Avatar" class="w-12 h-12 rounded-full">
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-lg text-gray-600">PP</div>
                                             <div class="ml-4">
                                                 <p class="font-semibold">Peter Pan</p>
                                                 <p class="text-sm text-gray-500">L4 - ID: 13579</p>
                                             </div>
                                         </div>
-                                        <button class="text-sm font-semibold text-brand-red hover:underline">View Profile</button>
+                                        <a href="#" class="text-sm font-semibold text-brand-red hover:underline flex items-center">View Profile <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i></a>
                                     </div>
                                      <div class="border rounded-lg p-4 flex items-center justify-between">
                                         <div class="flex items-center">
-                                            <img src="https://placehold.co/48x48/0F0F0F/FFFFFF?text=S" alt="Avatar" class="w-12 h-12 rounded-full">
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-lg text-gray-600">SB</div>
                                             <div class="ml-4">
                                                 <p class="font-semibold">Susan Bones</p>
                                                 <p class="text-sm text-gray-500">L5 - ID: 24680</p>
                                             </div>
                                         </div>
-                                        <button class="text-sm font-semibold text-brand-red hover:underline">View Profile</button>
+                                        <a href="#" class="text-sm font-semibold text-brand-red hover:underline flex items-center">View Profile <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i></a>
                                     </div>
                                 </div>
                             </div>
@@ -346,7 +370,20 @@
                     roleStatusPill.classList.remove('bg-red-100', 'text-red-800');
                 }
             });
+            
+            // Sidebar Submenu Toggle
+            document.querySelectorAll('.submenu-toggle').forEach(button => {
+                button.addEventListener('click', () => {
+                    const submenuContainer = button.nextElementSibling;
+                    const icon = button.querySelector('[data-lucide="chevron-down"]');
+                    submenuContainer.classList.toggle('open');
+                    icon.classList.toggle('rotate-180');
+                    button.parentElement.classList.toggle('parent-active');
+                });
+            });
+
         });
     </script>
 </body>
 </html>
+
