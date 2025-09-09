@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Cases</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Vodafone', sans-serif;
+            background-color: #F0F2F5;
+            color: #0F0F0F;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* --- Aurora Background --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5; z-index: -1;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; filter: blur(100px); opacity: 0.3;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff8a00, transparent 60%);
+            width: 400px; height: 400px; top: -100px; left: -150px;
+            animation: move-aurora-1 15s infinite alternate;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #e60000, transparent 60%);
+            width: 500px; height: 500px; bottom: -150px; right: -200px;
+            animation: move-aurora-2 12s infinite alternate;
+        }
+        @keyframes move-aurora-1 { to { transform: translate(100px, 50px); } }
+        @keyframes move-aurora-2 { to { transform: translate(-80px, -40px); } }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+        }
+        
+        /* --- Animations & Transitions --- */
+        .transition-all-fast { transition: all 0.2s ease-in-out; }
+        #sidebar-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+        #sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* --- BRANDED Sidebar Enhancements --- */
+        .sidebar { background-color: #0F0F0F; }
+        .sidebar-item { position: relative; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .parent-active > button { color: #FFFFFF; }
+        .parent-active { position: relative; }
+        .parent-active::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: #e60000; border-top-right-radius: 4px; border-bottom-right-radius: 4px;
+        }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .sidebar-submenu-container { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-in-out; }
+        .sidebar-submenu-container.open { grid-template-rows: 1fr; }
+        .sidebar-submenu { overflow: hidden; }
+        
+        /* --- Custom Scrollbar --- */
+        main::-webkit-scrollbar, .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        main::-webkit-scrollbar-track, .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb, .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        main::-webkit-scrollbar-thumb:hover, .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #374151; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+
+        /* --- Brand Color Utilities --- */
+        .text-brand-red { color: #e60000; }
+        .bg-brand-red { background-color: #e60000; }
+
+        /* --- Accordion & Progress Tracker --- */
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .accordion-item.expanded .accordion-body {
+            max-height: 1000px; /* Large enough to fit content */
+        }
+        
+        /* --- Tooltip for Progress --- */
+        .progress-tooltip-container {
+            position: relative;
+        }
+        .progress-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .progress-tooltip-container:hover .progress-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .progress-step-connector {
+            flex: 1 1 0%;
+            height: 2px;
+            background-color: #E5E7EB;
+        }
+        .progress-step.completed .progress-step-connector {
+            background-color: #e60000;
+        }
+    </style>
+</head>
+<body class="text-brand-black">
+    <div class="aurora-background"></div>
+
+    <div class="flex h-screen">
+        <div id="sidebar-overlay" class="fixed inset-0 z-30 md:hidden"></div>
+
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-40 -translate-x-full md:relative md:translate-x-0">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+                <button id="close-sidebar-btn" class="p-2 md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-grow overflow-y-auto sidebar-scroll">
+                 <ul class="px-4 py-4 space-y-1">
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg transition-all-fast"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Home/Dashboard</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link sub-active flex items-center px-4 py-3 rounded-lg"><i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>Business Cases</a></li>
+                    <li id="resource-management-menu" class="sidebar-item rounded-lg">
+                        <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all-fast">
+                            <span class="flex items-center"><i data-lucide="users-2" class="w-5 h-5 mr-3"></i>Resource Management</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg transition-all-fast">Bench Management</a>
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg">All Resources</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li id="resource-planning-menu" class="sidebar-item rounded-lg">
+                        <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all-fast">
+                            <span class="flex items-center"><i data-lucide="trending-up" class="w-5 h-5 mr-3"></i>Resource Planning & Allocation</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+                        </button>
+                        <div class="sidebar-submenu-container">
+                            <div class="sidebar-submenu pl-6 pr-2 pt-1 pb-2 space-y-1">
+                                <a href="#" class="nav-link flex items-center py-2 px-4 text-sm rounded-lg">Real-time Demand Tracking</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="p-4 border-t border-gray-700">
+                 <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
+                    <div class="w-10 h-10 rounded-full bg-brand-red text-white flex items-center justify-center font-bold">PM</div>
+                    <div class="ml-3">
+                        <p class="font-semibold text-white">Project Manager</p>
+                        <p class="text-xs text-gray-500">pm@workforce.io</p>
+                    </div>
+                 </a>
+            </div>
+        </nav>
+
+        <div class="flex-1 flex flex-col">
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10">
+                <div class="flex items-center">
+                    <button id="menu-btn" class="p-2 md:hidden mr-3"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <div>
+                        <h2 id="page-title" class="text-xl sm:text-2xl font-bold text-brand-black">Business Cases</h2>
+                        <nav id="breadcrumb" aria-label="Breadcrumb" class="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
+                             <ol class="list-none p-0 inline-flex">
+                              <li class="flex items-center"><a href="#" class="hover:text-brand-red">Home</a><i data-lucide="chevron-right" class="w-4 h-4 mx-1"></i></li>
+                              <li aria-current="page"><a href="#" class="text-brand-black font-medium">Business Cases</a></li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
+                <div class="card p-4 sm:p-6 mb-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="relative">
+                             <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                             <input type="text" id="search-input" placeholder="Search by BC or Project ID..." class="w-full bg-gray-50 border border-gray-300 text-brand-black rounded-lg py-2.5 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red">
+                        </div>
+                        <div>
+                             <select id="stage-filter" class="w-full bg-gray-50 border border-gray-300 text-brand-black rounded-lg py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-brand-red">
+                                <option value="all">All Progress Stages</option>
+                             </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4" id="business-cases-list">
+                    <!-- Business Case Accordions will be injected here by JS -->
+                </div>
+                 <div class="mt-6 flex items-center justify-between" id="pagination-controls">
+                    <p class="text-sm text-gray-600" id="pagination-info">Showing 0 to 0 of 0 results</p>
+                    <div class="flex items-center space-x-2">
+                        <button id="prev-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <span id="page-number" class="text-sm font-medium">Page 1</span>
+                        <button id="next-page-btn" class="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // --- MOCK DATA ---
+        const progressStages = [
+            'Proposed resource drafts',
+            'Submitted to finance for review',
+            'Finance approved',
+            'Hard Booked',
+            'Finance Rejected'
+        ];
+        
+        const generateBusinessCases = (count) => {
+            const data = [];
+            const roleNames = ['Frontend Developer', 'Backend Developer', 'QA Tester', 'Project Manager', 'UI/UX Designer', 'Data Scientist'];
+            
+            // Ensure the first page has one of each status for demo purposes
+            progressStages.forEach((stage, index) => {
+                if (index < count) { 
+                    const rolesForBC = [
+                        { role: 'Developer', status: stage === 'Hard Booked' ? 'Hard Booked' : 'Open', allocation: 100, startDate: '2025-01-15' },
+                        { role: 'QA Tester', status: stage === 'Hard Booked' ? 'Hard Booked' : 'Open', allocation: 50, startDate: '2025-02-01' },
+                    ];
+                     if (index === 0) {
+                        rolesForBC.push({ role: 'Project Manager', status: 'Open', allocation: 100, startDate: '2025-01-10' });
+                    }
+
+                    data.push({
+                        bcId: `BC-${100 + index}`,
+                        projectId: `PRJ-${9000 + index}`,
+                        costCenter: `CC-DEPT-${10 + index}`,
+                        progressStage: stage,
+                        roles: rolesForBC
+                    });
+                }
+            });
+
+            // Generate the rest of the data randomly
+            for (let i = progressStages.length; i < count; i++) {
+                const stage = progressStages[Math.floor(Math.random() * progressStages.length)];
+                const numRoles = Math.floor(Math.random() * 3) + 1;
+                const rolesForBC = [];
+                for(let j=0; j<numRoles; j++){
+                     rolesForBC.push({
+                        role: roleNames[Math.floor(Math.random() * roleNames.length)],
+                        status: stage === 'Hard Booked' ? 'Hard Booked' : 'Open',
+                        allocation: [50, 100][Math.floor(Math.random() * 2)],
+                        startDate: `2025-0${Math.floor(Math.random()*9)+1}-${String(Math.floor(Math.random()*28)+1).padStart(2, '0')}`
+                    });
+                }
+
+                data.push({
+                    bcId: `BC-${100 + i}`,
+                    projectId: `PRJ-${9000 + i}`,
+                    costCenter: `CC-DEPT-${10 + i}`,
+                    progressStage: stage,
+                    roles: rolesForBC
+                });
+            }
+            return data;
+        };
+        
+        const allBusinessCases = generateBusinessCases(100);
+
+        // --- STATE MANAGEMENT ---
+        let currentPage = 1;
+        let rowsPerPage = 5;
+        let currentFilters = {
+            searchTerm: '',
+            stage: 'all'
+        };
+
+        // --- RENDER FUNCTIONS ---
+        const getRoleStatusPill = (status) => {
+            let styles = '';
+            switch (status) {
+                case 'Open': styles = 'bg-blue-100 text-blue-800'; break;
+                case 'Resources Soft Booked': styles = 'bg-yellow-100 text-yellow-800'; break;
+                case 'Hard Booked': styles = 'bg-green-100 text-green-800'; break;
+                default: styles = 'bg-gray-100 text-gray-800';
+            }
+            return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${styles}">${status}</span>`;
+        };
+        
+        const getProgressStageTag = (stage) => {
+             let styles = '';
+            switch (stage) {
+                case 'Finance Approved': styles = 'bg-green-100 text-green-800'; break;
+                case 'Submitted to finance for review': styles = 'bg-yellow-100 text-yellow-800'; break;
+                case 'Hard Booked': styles = 'bg-blue-100 text-blue-800'; break;
+                case 'Finance Rejected': styles = 'bg-red-100 text-red-800'; break;
+                default: styles = 'bg-gray-100 text-gray-800';
+            }
+            return `<span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ${styles}">${stage}</span>`;
+        };
+
+        const createProgressStep = (label, isCompleted, isCurrent, isRejected) => {
+            let circleClass = 'bg-gray-300';
+            let labelClass = 'text-gray-500';
+
+            if (isRejected) {
+                 return ''; // Don't show steps for rejected
+            } else if (isCurrent) {
+                circleClass = 'bg-brand-red ring-4 ring-red-200';
+                labelClass = 'text-brand-red font-semibold';
+            } else if (isCompleted) {
+                circleClass = 'bg-brand-red';
+                labelClass = 'font-semibold text-brand-black';
+            }
+
+            return `
+                <div class="progress-step flex-1 flex flex-col items-center ${isCompleted ? 'completed' : ''}">
+                    <div class="w-4 h-4 rounded-full ${circleClass} transition-all-fast"></div>
+                    <p class="text-xs text-center mt-2 ${labelClass}">${label}</p>
+                </div>
+            `;
+        };
+
+        const renderBusinessCases = (data) => {
+            const listEl = document.getElementById('business-cases-list');
+            listEl.innerHTML = '';
+            if (data.length === 0) {
+                 listEl.innerHTML = '<div class="card p-8 text-center text-gray-500">No business cases match your criteria.</div>';
+                 return;
+            }
+            data.forEach(bc => {
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'card accordion-item';
+
+                const currentStageIndex = progressStages.indexOf(bc.progressStage);
+                const isRejected = bc.progressStage === 'Finance Rejected';
+
+                let progressTrackerHtml = '';
+                if (!isRejected) {
+                    progressStages.slice(0,4).forEach((stage, index) => {
+                        const isCompleted = index < currentStageIndex;
+                        const isCurrent = index === currentStageIndex;
+                        progressTrackerHtml += createProgressStep(stage, isCompleted, isCurrent, false);
+                        if (index < progressStages.length - 2) {
+                             progressTrackerHtml += `<div class="progress-step-connector ${isCompleted ? 'bg-brand-red' : ''}"></div>`;
+                        }
+                    });
+                }
+                
+                const inheritedRolesHtml = bc.roles.map(role => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">${role.role}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${getRoleStatusPill(role.status)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.allocation}%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${role.startDate}</td>
+                    </tr>
+                `).join('');
+
+                accordionItem.innerHTML = `
+                    <div class="accordion-header p-6 cursor-pointer flex justify-between items-center">
+                        <div class="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
+                            <div class="sm:col-span-1">
+                                <p class="font-medium text-gray-500 text-sm">BC ID</p>
+                                <p class="font-semibold">${bc.bcId}</p>
+                            </div>
+                             <div class="sm:col-span-1">
+                                <p class="font-medium text-gray-500 text-sm">Project ID</p>
+                                <p class="font-semibold">${bc.projectId}</p>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <p class="font-medium text-gray-500 text-sm">Cost Center</p>
+                                <p class="font-semibold">${bc.costCenter}</p>
+                            </div>
+                            <div class="sm:col-span-1 flex items-center justify-start sm:justify-end progress-tooltip-container">
+                                ${getProgressStageTag(bc.progressStage)}
+                                <div class="progress-tooltip absolute bottom-full mb-2 w-96 bg-white p-4 rounded-lg shadow-lg border hidden sm:block z-10">
+                                    <h5 class="font-semibold text-sm mb-4">Progress Tracker</h5>
+                                    ${isRejected ? '<p class="text-sm text-red-600">This business case has been rejected.</p>' : `<div class="flex items-center">${progressTrackerHtml}</div>`}
+                                </div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-down" class="transition-transform ml-4"></i>
+                    </div>
+                    <div class="accordion-body px-6 pb-6">
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold mb-2">Inherited Roles (${bc.roles.length})</h4>
+                            <div class="overflow-x-auto rounded-lg border">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
+                                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Allocation</th>
+                                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Start Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        ${inheritedRolesHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(accordionItem);
+            });
+            lucide.createIcons();
+        };
+        
+        const updatePaginationUI = (totalItems) => {
+            const paginationInfoEl = document.getElementById('pagination-info');
+            const pageNumberEl = document.getElementById('page-number');
+            const prevPageBtn = document.getElementById('prev-page-btn');
+            const nextPageBtn = document.getElementById('next-page-btn');
+            
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            const startItem = totalItems > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0;
+            const endItem = Math.min(currentPage * rowsPerPage, totalItems);
+            
+            paginationInfoEl.textContent = `Showing ${startItem} to ${endItem} of ${totalItems} results`;
+            pageNumberEl.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        };
+
+        const applyFiltersAndRender = () => {
+            let filteredData = allBusinessCases.filter(bc => {
+                const searchMatch = bc.bcId.toLowerCase().includes(currentFilters.searchTerm) || bc.projectId.toLowerCase().includes(currentFilters.searchTerm);
+                const stageMatch = currentFilters.stage === 'all' || bc.progressStage === currentFilters.stage;
+                return searchMatch && stageMatch;
+            });
+
+            const paginatedData = filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+            
+            renderBusinessCases(paginatedData);
+            updatePaginationUI(filteredData.length);
+        };
+
+        // --- INITIALIZATION & EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            const stageFilter = document.getElementById('stage-filter');
+            const businessCasesList = document.getElementById('business-cases-list');
+            const prevPageBtn = document.getElementById('prev-page-btn');
+            const nextPageBtn = document.getElementById('next-page-btn');
+            
+            progressStages.forEach(stage => {
+                stageFilter.innerHTML += `<option value="${stage}">${stage}</option>`;
+            });
+
+            applyFiltersAndRender();
+
+            searchInput.addEventListener('input', (e) => {
+                currentFilters.searchTerm = e.target.value.toLowerCase();
+                currentPage = 1;
+                applyFiltersAndRender();
+            });
+
+            stageFilter.addEventListener('change', (e) => {
+                currentFilters.stage = e.target.value;
+                currentPage = 1;
+                applyFiltersAndRender();
+            });
+
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    applyFiltersAndRender();
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                currentPage++;
+                applyFiltersAndRender();
+            });
+
+            businessCasesList.addEventListener('click', (e) => {
+                const header = e.target.closest('.accordion-header');
+                if (header) {
+                    const item = header.closest('.accordion-item');
+                    item.classList.toggle('expanded');
+                    header.querySelector('[data-lucide="chevron-down"]').classList.toggle('rotate-180');
+                }
+            });
+
+            // Sidebar logic
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const menuBtn = document.getElementById('menu-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebarOverlay.classList.toggle('open');
+            };
+            menuBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+            document.querySelectorAll('.sidebar-item button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const submenuContainer = this.nextElementSibling;
+                    const icon = this.querySelector('[data-lucide="chevron-down"]');
+                    submenuContainer.classList.toggle('open');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
+
