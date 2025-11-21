@@ -77,23 +77,24 @@
         .bg-brand-red { background-color: #e60000; }
         .ring-brand-red { --tw-ring-color: #e60000; }
 
-        /* --- Tab Styling (Segmented Control) --- */
+        /* --- NEW Tab Styling (Underline Style) --- */
         .tab-btn {
             position: relative;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            border-bottom-width: 2px;
+            border-color: transparent;
+            color: #6B7280; /* text-gray-500 */
+            padding-bottom: 1rem; /* Spacing for border */
+            margin-bottom: -1px; /* Sit on line */
+        }
+        .tab-btn:hover {
+            color: #111827; /* text-gray-900 */
+            border-color: #D1D5DB; /* border-gray-300 */
         }
         .tab-btn.active {
-            background-color: white;
-            color: #0F0F0F;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            color: #e60000; /* Brand Red */
+            border-color: #e60000;
             font-weight: 600;
-        }
-        .tab-btn:not(.active) {
-            color: #6B7280;
-        }
-        .tab-btn:not(.active):hover {
-            color: #374151;
-            background-color: rgba(255,255,255,0.5);
         }
 
         /* --- Urgency Indicator --- */
@@ -183,25 +184,25 @@
             </header>
 
             <main class="flex-1 overflow-y-auto p-4 sm:p-8">
-                <!-- AC 6.1: Segmented Control Tabs (Updated width and added 3rd tab) -->
-                <div class="flex justify-center mb-8">
-                    <div class="bg-gray-200/80 p-1 rounded-xl flex w-full max-w-2xl shadow-inner">
-                        <button id="tab-action" class="tab-btn active flex-1 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-all" onclick="switchTab('action')">
-                            Action Required
-                            <span id="action-badge" class="bg-brand-red text-white text-xs font-bold px-1.5 py-0.5 rounded-full">0</span>
-                        </button>
-                        <button id="tab-tracking" class="tab-btn flex-1 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-all" onclick="switchTab('tracking')">
-                            Tracking (Pending)
-                        </button>
-                        <button id="tab-approved" class="tab-btn flex-1 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-all" onclick="switchTab('approved')">
-                            Approved (History)
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Content Area -->
                 <div class="card overflow-hidden min-h-[400px]">
                     
+                    <!-- AC 6.1: Tabs Integrated into Card Header -->
+                    <div class="border-b border-gray-200 px-6 pt-6">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button id="tab-action" class="tab-btn active whitespace-nowrap text-sm font-medium flex items-center gap-2" onclick="switchTab('action')">
+                                Action Required
+                                <span id="action-badge" class="bg-brand-red text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                            </button>
+                            <button id="tab-tracking" class="tab-btn whitespace-nowrap text-sm font-medium flex items-center gap-2" onclick="switchTab('tracking')">
+                                Tracking (Pending)
+                            </button>
+                            <button id="tab-approved" class="tab-btn whitespace-nowrap text-sm font-medium flex items-center gap-2" onclick="switchTab('approved')">
+                                Approved (History)
+                            </button>
+                        </nav>
+                    </div>
+
                     <!-- AC 6.3, 6.4, 6.5: Action Required View -->
                     <div id="view-action" class="animate-fade-in">
                         <div class="overflow-x-auto">
