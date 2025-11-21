@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Detagging Activity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F0F2F5;
+            color: #0F0F0F;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* --- Aurora Background --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5; z-index: -1;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; filter: blur(100px); opacity: 0.3;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff8a00, transparent 60%);
+            width: 400px; height: 400px; top: -100px; left: -150px;
+            animation: move-aurora-1 15s infinite alternate;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #e60000, transparent 60%);
+            width: 500px; height: 500px; bottom: -150px; right: -200px;
+            animation: move-aurora-2 12s infinite alternate;
+        }
+        @keyframes move-aurora-1 { to { transform: translate(100px, 50px); } }
+        @keyframes move-aurora-2 { to { transform: translate(-80px, -40px); } }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+        }
+        
+        /* --- Animations --- */
+        .transition-all-fast { transition: all 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+        /* --- Modal & Overlay --- */
+        .modal-overlay { 
+            background-color: rgba(0,0,0,0.4); 
+            backdrop-filter: blur(4px);
+            opacity: 0; 
+            transition: opacity 0.3s ease-in-out; 
+            pointer-events: none; 
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+
+        /* --- Sidebar & Navigation --- */
+        .sidebar { background-color: #0F0F0F; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .text-brand-red { color: #e60000; }
+        .bg-brand-red { background-color: #e60000; }
+        .ring-brand-red { --tw-ring-color: #e60000; }
+
+        /* --- Tab Styling (Segmented Control) --- */
+        .tab-btn {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background-color: white;
+            color: #0F0F0F;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+        .tab-btn:not(.active) {
+            color: #6B7280;
+        }
+        .tab-btn:not(.active):hover {
+            color: #374151;
+            background-color: rgba(255,255,255,0.5);
+        }
+
+        /* --- Urgency Indicator --- */
+        .urgent-row {
+            background-color: #FFF7ED; /* Orange-50 */
+            border-left: 4px solid #F97316; /* Orange-500 */
+        }
+        .urgent-row:hover {
+            background-color: #FFEDD5;
+        }
+        
+        /* --- Sortable Header --- */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .sortable-header:hover {
+            color: #111827; /* gray-900 */
+        }
+        .sort-icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 4px;
+            opacity: 0.3;
+        }
+        .sortable-header.active-sort .sort-icon {
+            opacity: 1;
+            color: #e60000;
+        }
+
+        /* --- Filter Panel Styling --- */
+        #filter-panel { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
+        #filter-panel.open { transform: translateX(0); }
+        #filter-overlay { background-color: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; }
+        #filter-overlay.open { opacity: 1; pointer-events: auto; }
+    </style>
+</head>
+<body class="text-brand-black">
+    <div class="aurora-background"></div>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col hidden md:flex">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+            </div>
+            <div class="flex-grow overflow-y-auto sidebar-scroll">
+                <ul class="px-4 py-4 space-y-1">
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Dashboard</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg bg-gray-800 text-white"><i data-lucide="activity" class="w-5 h-5 mr-3"></i>My Detagging Activity</a></li>
+                </ul>
+            </div>
+             <div class="p-4 border-t border-gray-700">
+                 <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
+                    <div class="w-10 h-10 rounded-full bg-gray-700 text-white flex items-center justify-center font-bold border border-gray-500">JD</div>
+                    <div class="ml-3">
+                        <p class="font-semibold text-white">John Doe</p>
+                        <p class="text-xs text-gray-500">RM & Line Manager</p>
+                    </div>
+                 </a>
+            </div>
+        </nav>
+
+        <div class="flex-1 flex flex-col">
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10 bg-white/50 backdrop-blur-md border-b border-gray-200">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-brand-black">My Detagging Activity</h2>
+                    <p class="text-sm text-gray-500 mt-1">Manage your team's transitions and track your requests.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                        <input type="text" id="searchInput" placeholder="Search resources..." class="w-64 bg-white/80 border border-gray-300 text-brand-black rounded-full py-2 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red transition-all shadow-sm">
+                    </div>
+                    <!-- Filter Button -->
+                    <button id="filter-toggle-btn" class="flex items-center justify-center h-10 px-4 bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-all-fast shadow-sm">
+                        <i data-lucide="filter" class="w-4 h-4 mr-2"></i> Filter
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
+                <!-- AC 6.1: Segmented Control Tabs (Updated width and added 3rd tab) -->
+                <div class="flex justify-center mb-8">
+                    <div class="bg-gray-200/80 p-1 rounded-xl flex w-full max-w-2xl shadow-inner">
+                        <button id="tab-action" class="tab-btn active flex-1 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-all" onclick="switchTab('action')">
+                            Action Required
+                            <span id="action-badge" class="bg-brand-red text-white text-xs font-bold px-1.5 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button id="tab-tracking" class="tab-btn flex-1 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-all" onclick="switchTab('tracking')">
+                            Tracking (Pending)
+                        </button>
+                        <button id="tab-approved" class="tab-btn flex-1 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-all" onclick="switchTab('approved')">
+                            Approved (History)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="card overflow-hidden min-h-[400px]">
+                    
+                    <!-- AC 6.3, 6.4, 6.5: Action Required View -->
+                    <div id="view-action" class="animate-fade-in">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('resource', 'action')">
+                                            Resource <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Requested By</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Justification</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('benchDate', 'action')">
+                                            Bench Start Date <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('daysLeft', 'action')">
+                                            Time Left <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-action" class="divide-y divide-gray-200">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- AC 6.6: Tracking View (Pending) -->
+                    <div id="view-tracking" class="hidden animate-fade-in">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('resource', 'tracking')">
+                                            Resource <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('submissionDate', 'tracking')">
+                                            Submission Date <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-tracking" class="divide-y divide-gray-200">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Approved View (New Tab) -->
+                    <div id="view-approved" class="hidden animate-fade-in">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('resource', 'approved')">
+                                            Resource <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider sortable-header" onclick="handleSort('submissionDate', 'approved')">
+                                            Submission Date <i data-lucide="arrow-up-down" class="sort-icon w-3 h-3"></i>
+                                        </th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Approver</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-approved" class="divide-y divide-gray-200">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div id="filter-overlay" class="fixed inset-0 z-30"></div>
+    <aside id="filter-panel" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-40 p-8 flex flex-col" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold">Filter Data</h2>
+            <button id="close-filter-btn" class="p-1 rounded-full hover:bg-gray-100"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+        </div>
+        <div class="border-t -mx-8 my-6"></div>
+        <div class="flex-grow space-y-6 overflow-y-auto pr-2">
+            <!-- Role Filter (Applies to all) -->
+            <fieldset>
+                <div class="flex justify-between items-center">
+                    <legend class="text-sm font-semibold text-gray-600">By Role</legend>
+                    <div>
+                        <button class="text-xs font-medium text-brand-red hover:underline" onclick="toggleCheckboxes('role-filters', true)">Select All</button> /
+                        <button class="text-xs font-medium text-brand-red hover:underline" onclick="toggleCheckboxes('role-filters', false)">Clear</button>
+                    </div>
+                </div>
+                <div class="mt-2 space-y-2" id="role-filters">
+                    <!-- Injected by JS -->
+                </div>
+            </fieldset>
+            
+            <!-- Requested By Filter (Applies to Action Tab only) -->
+            <fieldset id="requestor-fieldset">
+                <div class="flex justify-between items-center">
+                    <legend class="text-sm font-semibold text-gray-600">Requested By <span class="text-xs font-normal text-gray-400">(Action Tab Only)</span></legend>
+                    <div>
+                        <button class="text-xs font-medium text-brand-red hover:underline" onclick="toggleCheckboxes('requestor-filters', true)">Select All</button> /
+                        <button class="text-xs font-medium text-brand-red hover:underline" onclick="toggleCheckboxes('requestor-filters', false)">Clear</button>
+                    </div>
+                </div>
+                <div class="mt-2 space-y-2" id="requestor-filters">
+                    <!-- Injected by JS -->
+                </div>
+            </fieldset>
+        </div>
+        <div class="flex-shrink-0 flex items-center space-x-4 mt-8">
+            <button id="reset-filters-btn" class="flex-1 h-11 px-5 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-all-fast">Reset</button>
+            <button id="apply-filters-btn" class="flex-1 h-11 px-5 bg-brand-red text-white rounded-lg font-semibold hover:bg-red-700 transition-all-fast">Apply Filters</button>
+        </div>
+    </aside>
+
+    <!-- Reject Modal (AC 6.4) -->
+    <div id="reject-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-brand-black">Reject Request</h3>
+                <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Reason for Rejection <span class="text-red-500">*</span></label>
+                <textarea id="reject-reason" rows="3" class="block w-full rounded-lg border-gray-300 border shadow-sm focus:ring-brand-red focus:border-brand-red sm:text-sm p-2.5" placeholder="Please provide a reason (10-200 characters)"></textarea>
+                <p id="char-count" class="text-xs text-right text-gray-500 mt-1">0/200</p>
+                <p id="reject-error" class="hidden text-xs text-red-600 mt-2 font-medium flex items-center">
+                    <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Must be between 10 and 200 characters.
+                </p>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="closeRejectModal()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">Cancel</button>
+                <button onclick="submitRejection()" class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 shadow-sm">Reject Request</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Mock Data ---
+        const today = new Date();
+        
+        const addDays = (days) => {
+            const date = new Date(today);
+            date.setDate(today.getDate() + days);
+            return date;
+        }
+
+        const pendingApprovals = [
+            { id: 101, resource: 'Sarah Jenkins', requestedBy: 'Alice (RM)', benchDate: addDays(2), role: 'Backend Lead', justification: 'Project funding has been cut for Q4. Resource needs to be moved to bench immediately to avoid budget overrun.' }, 
+            { id: 102, resource: 'Mike Ross', requestedBy: 'Bob (RM)', benchDate: addDays(5), role: 'QA Engineer', justification: 'Sprint completion early. No further QA tasks assigned for this phase.' },    
+            { id: 103, resource: 'Jessica Pearson', requestedBy: 'Alice (RM)', benchDate: addDays(14), role: 'Legal Counsel', justification: 'Contract expiry approaching. Renewal discussions stalled.' } 
+        ];
+
+        const myRequests = [
+            { id: 201, resource: 'Harvey Specter', role: 'Senior Partner', submissionDate: '2025-10-01', status: 'Pending', pendingWith: 'Louis Litt' },
+            { id: 202, resource: 'Donna Paulsen', role: 'COO', submissionDate: '2025-10-15', status: 'Pending', pendingWith: 'Robert Zane' },
+            { id: 203, resource: 'Rachel Zane', role: 'Paralegal', submissionDate: '2025-09-28', status: 'Approved', approvedBy: 'Jessica Pearson' },
+            { id: 204, resource: 'Harold Gunderson', role: 'Associate', submissionDate: '2025-09-20', status: 'Approved', approvedBy: 'Louis Litt' }
+        ];
+
+        let activeRejectId = null;
+        let currentSearch = '';
+        let activeTab = 'action';
+        let currentSort = { tab: 'action', key: null, direction: 'asc' };
+        let currentFilters = { roles: [], requestors: [] };
+
+        // --- Filter Panel Logic ---
+        
+        function populateFilters() {
+            // 1. Extract unique Roles (across all data)
+            const allRoles = new Set([
+                ...pendingApprovals.map(i => i.role),
+                ...myRequests.map(i => i.role)
+            ]);
+            
+            const roleContainer = document.getElementById('role-filters');
+            roleContainer.innerHTML = Array.from(allRoles).sort().map(role => `
+                <label class="flex items-center">
+                    <input type="checkbox" value="${role}" class="role-checkbox h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red">
+                    <span class="ml-2 text-gray-700 text-sm">${role}</span>
+                </label>
+            `).join('');
+
+            // 2. Extract unique Requestors (Action tab only)
+            const requestors = new Set(pendingApprovals.map(i => i.requestedBy));
+            const requestorContainer = document.getElementById('requestor-filters');
+            requestorContainer.innerHTML = Array.from(requestors).sort().map(req => `
+                <label class="flex items-center">
+                    <input type="checkbox" value="${req}" class="req-checkbox h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red">
+                    <span class="ml-2 text-gray-700 text-sm">${req}</span>
+                </label>
+            `).join('');
+        }
+
+        window.toggleCheckboxes = (containerId, check) => {
+            document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => cb.checked = check);
+        };
+
+        const toggleFilterPanel = () => {
+            const panel = document.getElementById('filter-panel');
+            const overlay = document.getElementById('filter-overlay');
+            const isOpen = panel.classList.contains('open');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
+                overlay.classList.remove('open');
+            } else {
+                panel.classList.add('open');
+                overlay.classList.add('open');
+            }
+        };
+
+        // --- Data Processing (Search, Filter, Sort) ---
+
+        function processData(data, tabName) {
+            let processed = [...data];
+
+            // 1. Filter (Search Text)
+            if (currentSearch) {
+                const term = currentSearch.toLowerCase();
+                processed = processed.filter(item => 
+                    item.resource.toLowerCase().includes(term) ||
+                    (item.role && item.role.toLowerCase().includes(term)) ||
+                    item.id.toString().includes(term)
+                );
+            }
+
+            // 2. Filter (Panel Selections)
+            // Role Filter
+            if (currentFilters.roles.length > 0) {
+                processed = processed.filter(item => currentFilters.roles.includes(item.role));
+            }
+            // Requestor Filter (Only for Action tab)
+            if (currentFilters.requestors.length > 0 && tabName === 'action') {
+                processed = processed.filter(item => currentFilters.requestors.includes(item.requestedBy));
+            }
+
+            // 3. Sort
+            if (currentSort.tab === tabName && currentSort.key) {
+                processed.sort((a, b) => {
+                    let valA = a[currentSort.key];
+                    let valB = b[currentSort.key];
+
+                    if (currentSort.key === 'daysLeft') {
+                        valA = a.benchDate.getTime();
+                        valB = b.benchDate.getTime();
+                    }
+                    else if (valA instanceof Date) {
+                        valA = valA.getTime();
+                        valB = valB.getTime();
+                    }
+                    else if (currentSort.key === 'submissionDate') {
+                        valA = new Date(valA).getTime();
+                        valB = new Date(valB).getTime();
+                    }
+                    
+                    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            return processed;
+        }
+
+        // --- Render Logic ---
+        
+        function renderActionTable() {
+            const tbody = document.getElementById('tbody-action');
+            const badge = document.getElementById('action-badge');
+            
+            badge.textContent = pendingApprovals.length;
+
+            const visibleData = processData(pendingApprovals, 'action');
+            tbody.innerHTML = '';
+
+            if (visibleData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500">No records found matching criteria.</td></tr>`;
+                return;
+            }
+
+            visibleData.forEach(item => {
+                const timeDiff = item.benchDate.getTime() - today.getTime();
+                const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                const isUrgent = daysLeft <= 5;
+                const urgencyClass = isUrgent ? 'urgent-row' : 'hover:bg-gray-50';
+                
+                let timeDisplay = '';
+                if (daysLeft <= 0) timeDisplay = `<span class="text-red-600 font-bold flex items-center"><i data-lucide="alert-octagon" class="w-4 h-4 mr-1"></i> OVERDUE</span>`;
+                else if (daysLeft === 0) timeDisplay = `<span class="text-orange-600 font-bold flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1"></i> TODAY</span>`;
+                else timeDisplay = `<span class="${isUrgent ? 'text-orange-600 font-bold' : 'text-gray-600'}">${daysLeft} Days Left</span>`;
+
+                const row = document.createElement('tr');
+                row.className = `transition-colors border-b border-gray-100 ${urgencyClass}`;
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-brand-black">${item.resource}</div>
+                        <div class="text-xs text-gray-500">ID: ${item.id}</div>
+                        <div class="text-xs text-gray-400">${item.role}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.requestedBy}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-600 truncate max-w-[150px]" title="${item.justification}">
+                            ${item.justification}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-800 font-medium">${item.benchDate.toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-sm">${timeDisplay}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="openRejectModal(${item.id})" class="px-3 py-1.5 text-xs font-semibold text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50">Reject</button>
+                        <button onclick="approveRequest(${item.id})" class="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-sm">Approve</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderTrackingTable() {
+            const tbody = document.getElementById('tbody-tracking');
+            const pendingRequests = myRequests.filter(req => req.status === 'Pending');
+            const visibleData = processData(pendingRequests, 'tracking');
+
+            tbody.innerHTML = '';
+
+            if (visibleData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">No records found matching criteria.</td></tr>`;
+                return;
+            }
+
+            visibleData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
+                const statusPill = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending with LM: ${item.pendingWith}</span>`;
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-brand-black">${item.resource}</div>
+                        <div class="text-xs text-gray-500">ID: ${item.id}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.role}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.submissionDate}</td>
+                    <td class="px-6 py-4">
+                        ${statusPill}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderApprovedTable() {
+            const tbody = document.getElementById('tbody-approved');
+            const approvedRequests = myRequests.filter(req => req.status === 'Approved');
+            const visibleData = processData(approvedRequests, 'approved');
+
+            tbody.innerHTML = '';
+
+            if (visibleData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-gray-500">No records found matching criteria.</td></tr>`;
+                return;
+            }
+
+            visibleData.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
+                const approverPill = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> ${item.approvedBy}</span>`;
+
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-brand-black">${item.resource}</div>
+                        <div class="text-xs text-gray-500">ID: ${item.id}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.role}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.submissionDate}</td>
+                    <td class="px-6 py-4">
+                        ${approverPill}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // --- Interaction Logic ---
+
+        window.switchTab = (tab) => {
+            activeTab = tab;
+            const tabs = ['action', 'tracking', 'approved'];
+            
+            // Update active tab UI
+            const buttons = {
+                'action': document.getElementById('tab-action'),
+                'tracking': document.getElementById('tab-tracking'),
+                'approved': document.getElementById('tab-approved')
+            };
+            const views = {
+                'action': document.getElementById('view-action'),
+                'tracking': document.getElementById('view-tracking'),
+                'approved': document.getElementById('view-approved')
+            };
+
+            tabs.forEach(t => {
+                if (t === tab) {
+                    views[t].classList.remove('hidden');
+                    buttons[t].classList.add('active');
+                } else {
+                    views[t].classList.add('hidden');
+                    buttons[t].classList.remove('active');
+                }
+            });
+
+            // Update Filter Panel Visibility for Requestor
+            const reqFieldset = document.getElementById('requestor-fieldset');
+            if (tab === 'action') {
+                reqFieldset.classList.remove('hidden');
+            } else {
+                reqFieldset.classList.add('hidden');
+            }
+            
+            renderAll();
+        };
+
+        // ... (Approval/Reject functions same as before) ...
+        window.approveRequest = (id) => {
+            const index = pendingApprovals.findIndex(i => i.id === id);
+            if (index > -1) {
+                pendingApprovals.splice(index, 1);
+                renderAll();
+                alert(`Request for ID ${id} Approved.`);
+            }
+        };
+
+        window.openRejectModal = (id) => {
+            activeRejectId = id;
+            const modal = document.getElementById('reject-modal');
+            const textarea = document.getElementById('reject-reason');
+            const error = document.getElementById('reject-error');
+            textarea.value = '';
+            document.getElementById('char-count').textContent = '0/200';
+            error.classList.add('hidden');
+            textarea.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('open'), 10);
+        };
+
+        window.closeRejectModal = () => {
+            const modal = document.getElementById('reject-modal');
+            modal.classList.remove('open');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            activeRejectId = null;
+        };
+
+        window.submitRejection = () => {
+            const textarea = document.getElementById('reject-reason');
+            const error = document.getElementById('reject-error');
+            const reason = textarea.value.trim();
+            if (reason.length < 10 || reason.length > 200) {
+                error.classList.remove('hidden');
+                textarea.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                return;
+            }
+            const index = pendingApprovals.findIndex(i => i.id === activeRejectId);
+            if (index > -1) {
+                pendingApprovals.splice(index, 1);
+                renderAll();
+                closeRejectModal();
+                alert(`Request rejected. Reason: ${reason}`);
+            }
+        };
+
+        document.getElementById('reject-reason').addEventListener('input', function() {
+            const count = this.value.length;
+            const counterEl = document.getElementById('char-count');
+            counterEl.textContent = `${count}/200`;
+            if (count > 200) counterEl.classList.add('text-red-600');
+            else counterEl.classList.remove('text-red-600');
+        });
+
+        window.handleSort = (key, tab) => {
+            if (currentSort.key === key && currentSort.tab === tab) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = { tab: tab, key: key, direction: 'asc' };
+            }
+            renderAll();
+            updateSortIcons();
+        };
+
+        function updateSortIcons() {
+            document.querySelectorAll('.sortable-header').forEach(el => {
+                el.classList.remove('active-sort');
+                const icon = el.querySelector('.sort-icon');
+                if(icon) icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-down w-3 h-3"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg>';
+            });
+            if (!currentSort.key) return;
+            const activeHeaders = document.querySelectorAll(`.sortable-header[onclick*="${currentSort.key}"][onclick*="${currentSort.tab}"]`);
+            activeHeaders.forEach(header => {
+                header.classList.add('active-sort');
+                const icon = header.querySelector('.sort-icon');
+                if (currentSort.direction === 'asc') {
+                    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up w-3 h-3"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>';
+                } else {
+                    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down w-3 h-3"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>';
+                }
+            });
+        }
+
+        function renderAll() {
+            renderActionTable();
+            renderTrackingTable();
+            renderApprovedTable();
+            lucide.createIcons();
+        }
+
+        // Event Listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            renderAll();
+        });
+
+        document.getElementById('filter-toggle-btn').addEventListener('click', toggleFilterPanel);
+        document.getElementById('close-filter-btn').addEventListener('click', toggleFilterPanel);
+        document.getElementById('filter-overlay').addEventListener('click', toggleFilterPanel);
+
+        document.getElementById('apply-filters-btn').addEventListener('click', () => {
+            const roles = Array.from(document.querySelectorAll('.role-checkbox:checked')).map(cb => cb.value);
+            const requestors = Array.from(document.querySelectorAll('.req-checkbox:checked')).map(cb => cb.value);
+            currentFilters = { roles, requestors };
+            renderAll();
+            toggleFilterPanel();
+        });
+
+        document.getElementById('reset-filters-btn').addEventListener('click', () => {
+            toggleCheckboxes('role-filters', false);
+            toggleCheckboxes('requestor-filters', false);
+            currentFilters = { roles: [], requestors: [] };
+            renderAll();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            populateFilters();
+            renderAll();
+        });
+
+    </script>
+</body>
+</html>
