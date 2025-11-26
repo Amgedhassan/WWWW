@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFM - Privacy Consent Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F0F2F5;
+            color: #0F0F0F;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* --- Aurora Background --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5; z-index: -1;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; filter: blur(100px); opacity: 0.3;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff8a00, transparent 60%);
+            width: 400px; height: 400px; top: -100px; left: -150px;
+            animation: move-aurora-1 15s infinite alternate;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #e60000, transparent 60%);
+            width: 500px; height: 500px; bottom: -150px; right: -200px;
+            animation: move-aurora-2 12s infinite alternate;
+        }
+        @keyframes move-aurora-1 { to { transform: translate(100px, 50px); } }
+        @keyframes move-aurora-2 { to { transform: translate(-80px, -40px); } }
+
+        /* --- Card Styling --- */
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+        }
+        
+        /* --- Modal & Overlay --- */
+        .modal-overlay { 
+            background-color: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(8px);
+            opacity: 0; 
+            transition: opacity 0.3s ease-in-out; 
+            pointer-events: none; 
+            z-index: 999; /* Topmost z-index */
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+
+        /* --- Sidebar & Navigation --- */
+        .sidebar { background-color: #0F0F0F; }
+        .sidebar-item > a, .sidebar-item > button { color: #9CA3AF; font-weight: 500; }
+        .sidebar-item:hover > a, .sidebar-item:hover > button { color: #FFFFFF; background-color: #1F2937; }
+        .nav-link.sub-active { color: #FFFFFF; font-weight: 600; background-color: #374151; }
+        .text-brand-red { color: #e60000; }
+        .bg-brand-red { background-color: #e60000; }
+        .ring-brand-red { --tw-ring-color: #e60000; }
+
+        /* --- Scrollable Terms --- */
+        .terms-scroll::-webkit-scrollbar { width: 6px; }
+        .terms-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .terms-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .terms-scroll::-webkit-scrollbar-thumb:hover { background: #999; }
+
+        /* --- Access Denied Screen --- */
+        #access-denied-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #F0F2F5;
+            z-index: 1000; /* Above everything */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="text-brand-black">
+    <div class="aurora-background"></div>
+
+    <!-- Access Denied Screen (AC 01.4) -->
+    <div id="access-denied-screen">
+        <div class="text-center p-8 max-w-md">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="shield-off" class="w-10 h-10 text-red-600"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+            <p class="text-gray-600 mb-8">You have declined the Privacy Statement. To access the WFM platform, you must accept the terms of service regarding data usage.</p>
+            <button onclick="location.reload()" class="w-full py-3 bg-brand-red text-white rounded-lg font-bold hover:bg-red-700 transition-all shadow-lg">
+                Return to Login
+            </button>
+        </div>
+    </div>
+
+    <div class="flex h-screen" id="main-app">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="w-64 sidebar text-gray-300 flex-shrink-0 flex flex-col hidden md:flex">
+            <div class="h-24 flex items-center justify-between px-6">
+                <div class="flex items-center">
+                    <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-brand-red">
+                        <path d="M32 0C14.327 0 0 14.327 0 32C0 49.673 14.327 64 32 64C49.673 64 64 49.673 64 32C64 14.327 49.673 0 32 0ZM45.623 48H39.131L32.016 31.819L24.869 48H18.377L28.623 27.557V16H35.377V27.557L45.623 48Z" fill="currentColor"/>
+                    </svg>
+                    <h1 class="text-xl font-bold text-white ml-3">WFM</h1>
+                </div>
+            </div>
+            <div class="flex-grow overflow-y-auto sidebar-scroll">
+                <ul class="px-4 py-4 space-y-1">
+                    <li class="sidebar-item"><a href="#" class="nav-link sub-active flex items-center px-4 py-3 rounded-lg"><i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>Dashboard</a></li>
+                    <li class="sidebar-item"><a href="#" class="nav-link flex items-center px-4 py-3 rounded-lg"><i data-lucide="users-2" class="w-5 h-5 mr-3"></i>My Team</a></li>
+                </ul>
+            </div>
+             <div class="p-4 border-t border-gray-700 space-y-2">
+                 <!-- AC 02.1: Persistent Privacy Link -->
+                 <button onclick="openPrivacyModal(true)" class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-gray-800 text-xs text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="shield" class="w-4 h-4 mr-2"></i> Privacy Statement
+                 </button>
+                 <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-700/50 transition-all-fast">
+                    <div class="w-10 h-10 rounded-full bg-gray-700 text-white flex items-center justify-center font-bold border border-gray-500">JD</div>
+                    <div class="ml-3">
+                        <p class="font-semibold text-white">John Doe</p>
+                        <p class="text-xs text-gray-500">Logged In</p>
+                    </div>
+                 </a>
+            </div>
+        </nav>
+
+        <div class="flex-1 flex flex-col">
+            <header class="h-24 glassmorphic flex-shrink-0 flex items-center justify-between px-4 sm:px-8 z-10 bg-white/50 backdrop-blur-md border-b border-gray-200">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-brand-black">Dashboard</h2>
+                    <p class="text-sm text-gray-500 mt-1">Welcome back, John.</p>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8">
+                <div class="card p-8 text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900">System Access Granted</h3>
+                    <p class="text-gray-500 mt-2 max-w-md mx-auto">You have accepted the Privacy Statement and are now authorized to view sensitive workforce data.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- AC 01: Privacy Consent Modal -->
+    <div id="privacy-modal" class="modal-overlay fixed inset-0 flex items-center justify-center p-4" role="dialog" aria-modal="true" data-backdrop="static">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] relative">
+            
+            <!-- Header -->
+            <div class="px-8 py-6 border-b border-gray-200">
+                <div class="flex items-center gap-3 mb-1">
+                    <i data-lucide="lock" class="w-6 h-6 text-brand-red"></i>
+                    <h2 class="text-xl font-bold text-brand-black">Privacy Statement & Consent</h2>
+                </div>
+                <p class="text-sm text-gray-500">Please review the data handling policies below to proceed.</p>
+                
+                <!-- Close button only for reference mode (AC 02) -->
+                <button id="modal-close-x" class="hidden absolute top-6 right-6 text-gray-400 hover:text-gray-600" onclick="closePrivacyModal()">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- AC 01.2: Full Text Body -->
+            <div class="p-8 overflow-y-auto terms-scroll text-sm text-gray-600 space-y-6 leading-relaxed bg-gray-50/50">
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">1. Introduction</h3>
+                    <p>Welcome to the Vodafone Workforce Management (WFM) Portal. We are committed to protecting your personal data and respecting your privacy. This policy explains how we collect, use, and safeguard your information.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">2. Data Collection</h3>
+                    <p>We collect information necessary for workforce planning, including but not limited to: Employee ID, Name, Role Allocations, Skills Matrix, and Project Assignments. This data is sourced from internal HR systems (SuccessFactors) and direct input.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">3. Purpose of Processing</h3>
+                    <p>Your data is processed strictly for the purpose of operational resource management, capacity planning, and project billing. We do not use this data for external marketing purposes.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">4. Data Retention</h3>
+                    <p>Data is retained in accordance with Vodafone's global data retention policies. Records of project assignments are kept for 5 years for audit compliance.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-2">5. Your Rights</h3>
+                    <p>You have the right to access, rectify, or request erasure of your personal data within the constraints of employment law. Please contact the Data Privacy Officer for specific requests.</p>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                    <h3 class="font-bold text-yellow-800 mb-1 flex items-center"><i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i> Important Note</h3>
+                    <p class="text-yellow-800 text-xs">By accessing this system, you acknowledge that all actions are logged for security and audit purposes.</p>
+                </div>
+            </div>
+
+            <!-- AC 01.3: Footer with Actions -->
+            <div class="px-8 py-6 border-t border-gray-200 bg-white rounded-b-xl flex justify-between items-center gap-4">
+                <!-- Disagree Button -->
+                <button id="btn-disagree" onclick="handleDisagree()" class="px-6 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 hover:text-red-600 transition-colors w-full sm:w-auto">
+                    I Disagree
+                </button>
+                
+                <!-- Agree Button -->
+                <button id="btn-agree" onclick="handleAgree()" class="px-6 py-2.5 bg-brand-red text-white font-semibold rounded-lg hover:bg-red-700 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
+                    I Agree
+                </button>
+
+                <!-- Close Button (For Read-Only Mode) -->
+                <button id="btn-close-readonly" onclick="closePrivacyModal()" class="hidden px-6 py-2.5 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-900 w-full sm:w-auto">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Simulating First Time Login Check
+            // In a real app, this would be a backend flag like user.hasAcceptedPrivacy
+            const hasAccepted = sessionStorage.getItem('wfm_privacy_accepted');
+
+            if (!hasAccepted) {
+                openPrivacyModal(false); // Open in "Consent Mode"
+            }
+        });
+
+        // --- Modal Logic ---
+
+        function openPrivacyModal(isReadOnly) {
+            const modal = document.getElementById('privacy-modal');
+            const btnAgree = document.getElementById('btn-agree');
+            const btnDisagree = document.getElementById('btn-disagree');
+            const btnClose = document.getElementById('btn-close-readonly');
+            const iconX = document.getElementById('modal-close-x');
+
+            modal.classList.remove('hidden');
+            // Trigger animation
+            setTimeout(() => modal.classList.add('open'), 10);
+
+            if (isReadOnly) {
+                // AC 02.1: View Mode
+                btnAgree.classList.add('hidden');
+                btnDisagree.classList.add('hidden');
+                btnClose.classList.remove('hidden');
+                iconX.classList.remove('hidden');
+            } else {
+                // AC 01.1: Consent Mode
+                btnAgree.classList.remove('hidden');
+                btnDisagree.classList.remove('hidden');
+                btnClose.classList.add('hidden');
+                iconX.classList.add('hidden'); // Force user to choose an option
+            }
+        }
+
+        function closePrivacyModal() {
+            const modal = document.getElementById('privacy-modal');
+            modal.classList.remove('open');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // --- Action Handlers ---
+
+        // AC 01.3 & 01.4
+        function handleDisagree() {
+            closePrivacyModal();
+            // Simulate Denial of Access
+            setTimeout(() => {
+                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('access-denied-screen').style.display = 'flex';
+            }, 300);
+        }
+
+        function handleAgree() {
+            // Save consent
+            sessionStorage.setItem('wfm_privacy_accepted', 'true');
+            closePrivacyModal();
+            
+            // Optional: Show a success toast
+            // alert("Welcome! Access Granted.");
+        }
+
+    </script>
+</body>
+</html>
